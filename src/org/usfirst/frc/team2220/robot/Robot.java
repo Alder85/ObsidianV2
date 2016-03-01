@@ -68,17 +68,18 @@ public class Robot extends SampleRobot {
 	
 	
 	
-	TwilightTalon collector = new TwilightTalon(10);
-	TwilightTalon rightShooter = new TwilightTalon(9);
+	TwilightTalon collector = new TwilightTalon(9);
+	TwilightTalon rightShooter = new TwilightTalon(10);
 	TwilightTalon leftShooter  = new TwilightTalon(12);
 	
-	TwilightTalon lifterRelease = new TwilightTalon(13);
-	TwilightTalon wench = new TwilightTalon(14);
+	//TwilightTalon lifterRelease = new TwilightTalon(13);
+	//TwilightTalon wench = new TwilightTalon(14);
 	
-	//POSITIVE SPINS counterclockwise
+	//POSITIVE SPINS counterclockwise 
 	TwilightTalon collectorExtender = new TwilightTalon(11);
 	//counterclockwise for backward
 	//clockwise for forwards
+	//potatoes are potatoes
 	
 	Drivetrain drivetrain = new Drivetrain();
 	
@@ -121,7 +122,7 @@ public class Robot extends SampleRobot {
     	//talon2.setMaxCurrent(5);
     	
     	collectorExtender.setMaxCurrent(120);
-    	lifterRelease.setMaxCurrent(30);
+    	//lifterRelease.setMaxCurrent(30);
     	
     	flModule.reverseTalon(true);
     	blModule.reverseTalon(true);
@@ -152,7 +153,7 @@ public class Robot extends SampleRobot {
     	
     	drivetrain.setModules(flModule, frModule, brModule, blModule);
     	drivetrain.setWheels(flWheel, frWheel, brWheel, blWheel);
-    	
+    	/*
     	lifterRelease.setFeedbackDevice(FeedbackDevice.PulseWidth);
     	lifterRelease.changeControlMode(TalonControlMode.Position);
     	lifterRelease.setPID(1.0, 0.001, 0.0);
@@ -160,7 +161,7 @@ public class Robot extends SampleRobot {
     	double lifterPosition = (lifterRelease.getPulseWidthPosition() / 4096);
     	
     	lifterRelease.setAllowableClosedLoopErr(30);
-    	
+    	*/
     	double leftAxis, rightAxis;
     	double wenchAxis;
     	double[] maxVal = new double[4];
@@ -225,22 +226,23 @@ public class Robot extends SampleRobot {
 			/////////////////////////
 			//      Collector      //
 			/////////////////////////
+			
 			if(manipulatorController.whileHeld(TriggerButton.lTrigger))
 			{
-				if(rearCollector.get())
-				{
+				//if(rearCollector.get())
+				//{
 					collector.set(1.0);
-				}
-				else
+				//}
+				//else
 					collector.set(0);
 			}
 			else if(manipulatorController.whileHeld(TriggerButton.rTrigger))
 			{
-				if(rearCollector.get())
-				{
+				//if(rearCollector.get())
+				//{
 					collector.set(-1.0);
-				}
-				else
+				//}
+				//else
 					collector.set(0);
 			}
 			else
@@ -263,6 +265,7 @@ public class Robot extends SampleRobot {
 			/////////////////////////
 			//  Collector Extender //
 			/////////////////////////
+			/*
 			if(manipulatorController.getPOV() != -1)
 			{
 				if(manipulatorController.getPOV() == 0 || manipulatorController.getPOV() == 315 || manipulatorController.getPOV() == 45)
@@ -288,10 +291,12 @@ public class Robot extends SampleRobot {
         	{
         		collectorExtender.set(0);
         	}
+        	*/
 			
 			/////////////////////////
 			//        Lifter       //
 			///////////////////////// TODO make it so you can only press this button once
+			/*
 			if(manipulatorController.onPress(Button.bButton))
 			{
 				if(rearCollector.get())
@@ -310,6 +315,7 @@ public class Robot extends SampleRobot {
 			
 			wenchAxis = deadZone(manipulatorController.getRawAxis(1) * -1, wheelDZ);
         	wench.set(wenchAxis);
+        	*/
 			       	
         	/////////////////////////
         	//   Print Everything  //
@@ -399,9 +405,7 @@ public class Robot extends SampleRobot {
         	talon5.test();
         	
         	
-        	dash.putNumber("lifterRelease get", lifterRelease.get());
-        	dash.putNumber("lifterRelease pulseWidth", lifterRelease.getPulseWidthPosition());
-        	dash.putNumber("lifterRelease voltage", lifterRelease.getOutputVoltage());
+        	
         	
         	if((talon7.isDisabled() || talon2.isDisabled() || talon4.isDisabled() || talon5.isDisabled()))
         	{
@@ -438,7 +442,7 @@ public class Robot extends SampleRobot {
         	//rightShooter.test(); //except these ones i guess
         	//leftShooter.test();
         	
-        	lifterRelease.test();
+        	//lifterRelease.test();
         	collectorExtender.test();
         	
        
