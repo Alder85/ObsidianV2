@@ -97,6 +97,8 @@ public class Robot extends SampleRobot {
 	
 	Timer resetTimer = new Timer();
 	
+	Timer shootTimer = new Timer();
+	
  	//testModule.changeControlMode(TalonControlMode.Position);
 	//testModule.setFeedbackDevice(FeedbackDevice.EncFalling);
 	
@@ -253,14 +255,19 @@ public class Robot extends SampleRobot {
 			/////////////////////////
 			if(manipulatorController.whileHeld(Button.aButton))
 			{
+				if(shootTimer.get() == 0)
+					shootTimer.start();
         		rightShooter.set(1.0);
         		leftShooter.set(-1.0);
         	}
         	else
         	{
         		rightShooter.set(0);
+        		rightShooter.set(0);
         		leftShooter.set(0);
         	}
+			
+			dash.putNumber("shootTimer", shootTimer.get());
 
 			/////////////////////////
 			//  Collector Extender //
