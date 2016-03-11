@@ -6,7 +6,12 @@ package org.usfirst.frc.team2220.robot;
 import org.usfirst.frc.team2220.robot.XBoxController.Button;
 import org.usfirst.frc.team2220.robot.XBoxController.TriggerButton;
 
+import com.ni.vision.NIVision;
+import com.ni.vision.NIVision.Image;
+import com.ni.vision.NIVision.ImageType;
+
 import edu.wpi.first.wpilibj.CANTalon;
+import edu.wpi.first.wpilibj.CameraServer;
 import edu.wpi.first.wpilibj.CANTalon.FeedbackDevice;
 import edu.wpi.first.wpilibj.CANTalon.TalonControlMode;
 import edu.wpi.first.wpilibj.DigitalInput;
@@ -68,8 +73,8 @@ public class Robot extends SampleRobot {
 	
 	
 	
-	TwilightTalon collector = new TwilightTalon(9);
-	TwilightTalon rightShooter = new TwilightTalon(10);
+	TwilightTalon collector = new TwilightTalon(10);
+	TwilightTalon rightShooter = new TwilightTalon(9);
 	TwilightTalon leftShooter  = new TwilightTalon(12);
 	
 	//TwilightTalon lifterRelease = new TwilightTalon(13);
@@ -102,13 +107,32 @@ public class Robot extends SampleRobot {
  	//testModule.changeControlMode(TalonControlMode.Position);
 	//testModule.setFeedbackDevice(FeedbackDevice.EncFalling);
 	
-	
-    /**
+	CameraServer server;
+	Image frame;
+	boolean isCam1 = false;
+	int session0, session1;
+	double prevPOVval= 0;
+	public void robotInit()
+	{
+		frame = NIVision.imaqCreateImage(ImageType.IMAGE_RGB, 0);
+		session0 = NIVision.IMAQdxOpenCamera("cam0", NIVision.IMAQdxCameraControlMode.CameraControlModeController);
+		session1 = NIVision.IMAQdxOpenCamera("cam1", NIVision.IMAQdxCameraControlMode.CameraControlModeController);
+		NIVision.IMAQdxConfigureGrab(session0);
+    }
+	/**
      * TeleOp
      * @TODO
      */
     public void operatorControl() {
     	
+    	
+        //NIVision.imaqdxgr
+        //NIVision.IMAQdxConfigureGrab(session1);
+    	//server = CameraServer.getInstance();
+        //server.setQuality(50);
+        //the camera name (ex "cam0") can be found through the roborio web interface
+        //server.startAutomaticCapture("cam0");
+        //server.startAutomaticCapture("cam1");
     	//don't declare stuff here
     	
     	collectorExtender.enableBrakeMode(true);
@@ -128,9 +152,9 @@ public class Robot extends SampleRobot {
     	
     	flModule.reverseTalon(true);
     	blModule.reverseTalon(true);
-
-    	frModule.reverseTalon(false);
-    	brModule.reverseTalon(true);
+    	
+    	frModule.reverseTalon(true);
+    	brModule.reverseTalon(false);
     	
     	frModule.setRightWheel(true);
     	brModule.setRightWheel(true);
@@ -144,9 +168,11 @@ public class Robot extends SampleRobot {
     	talon7.enableBrakeMode(false);
     	
 
+    	rightShooter.changeControlMode(TalonControlMode.Voltage);
+    	leftShooter.changeControlMode(TalonControlMode.Voltage);
+    	leftShooter.reverseOutput(true);
     	
-    	
-    	double allTuning = 2.5;
+    	double allTuning = 1.5;
     	
     	frModule.setP(allTuning);
     	brModule.setP(allTuning);
@@ -172,6 +198,8 @@ public class Robot extends SampleRobot {
     	double tempTune;
     	int dashCount = 0;
     	
+    	double shooterVoltage = 10;
+    	
         while (isOperatorControl() && isEnabled()) {
 			/////////////////////////
 			//  Primary Controller //
@@ -187,15 +215,15 @@ public class Robot extends SampleRobot {
         	if(driverController.onPress(TriggerButton.rTrigger))
         		drivetrain.incrementAllModules(1);
         	
-        	if(driverController.onPress(Button.lBumper))
+        	if(driverController.onPress(Button.rBumper))
         		drivetrain.turnOutwards();
         	
-        	if(driverController.onPress(Button.rBumper))
+        	if(driverController.onPress(Button.lBumper))
         		drivetrain.turnInwards();
         	
         	if(driverController.whileHeld(Button.aButton))
         	{
-        		tempTune = 1;
+        		tempTune = 0.4;
         		frModule.setP(tempTune);
         		flModule.setP(tempTune);
         		blModule.setP(tempTune);
@@ -209,7 +237,7 @@ public class Robot extends SampleRobot {
         		blModule.setP(tempTune);
         		brModule.setP(tempTune);
         	}
-        	dash.putNumber("tempTune", tempTune);
+        	SmartDashboard.putNumber("tempTune", tempTune);
         	
 			/////////////////////////
 			//     Drive Wheels    //
@@ -229,14 +257,15 @@ public class Robot extends SampleRobot {
 			//      Collector      //
 			/////////////////////////
 			
-			if(manipulatorController.whileHeld(TriggerButton.lTrigger))
+			if(manipulatorController.whileHeld(TriggerButton.lTrigger)) //intake
 			{
 				//if(rearCollector.get())
 				//{
 					collector.set(1.0);
+					
 				//}
 				//else
-					collector.set(0);
+					//collector.set(0);
 			}
 			else if(manipulatorController.whileHeld(TriggerButton.rTrigger))
 			{
@@ -245,7 +274,7 @@ public class Robot extends SampleRobot {
 					collector.set(-1.0);
 				//}
 				//else
-					collector.set(0);
+					//collector.set(0);
 			}
 			else
 				collector.set(0);
@@ -257,24 +286,71 @@ public class Robot extends SampleRobot {
 			{
 				if(shootTimer.get() == 0)
 					shootTimer.start();
-        		rightShooter.set(1.0);
-        		leftShooter.set(-1.0);
+				rightShooter.set(shooterVoltage);
+				leftShooter.set(-shooterVoltage);
+        		//rightShooter.set(1.0);
+        		//leftShooter.set(-1.0);
         	}
         	else
         	{
         		rightShooter.set(0);
         		rightShooter.set(0);
         		leftShooter.set(0);
+        		shootTimer.reset();
         	}
 			
-			dash.putNumber("shootTimer", shootTimer.get());
-
+			double changeConstant = 0.5;
+			if(manipulatorController.onPress(Button.lBumper))
+			{
+				shooterVoltage -= changeConstant;
+			}
+			if(manipulatorController.onPress(Button.rBumper))
+			{
+				shooterVoltage += changeConstant;
+			}
+			
+			SmartDashboard.putNumber("shooterVoltage", shooterVoltage);
+			
+			SmartDashboard.putNumber("rightShooterVoltage", rightShooter.getOutputVoltage());
+			SmartDashboard.putNumber("leftShooterVoltage", leftShooter.getOutputVoltage());
+			
+			SmartDashboard.putNumber("shootTimer", shootTimer.get());
+			/////////////////////////
+			//    Camera Toggle    //
+			/////////////////////////
+			double currentPOVval = driverController.getPOV();
+			if(currentPOVval == 270 && prevPOVval != 270)
+			{
+				if(isCam1)
+				{
+					NIVision.IMAQdxStopAcquisition(session1);
+					NIVision.IMAQdxConfigureGrab(session0);
+					isCam1 = false;
+				}
+				else if(!isCam1)
+				{
+					NIVision.IMAQdxStopAcquisition(session0);
+					NIVision.IMAQdxConfigureGrab(session1);
+					isCam1 = true;
+				}
+			}
+			prevPOVval = currentPOVval;
+			if(isCam1)
+			{
+				NIVision.IMAQdxGrab(session1, frame, 1);
+			}
+			else
+			{
+				NIVision.IMAQdxGrab(session0, frame, 1);
+			}
+			CameraServer.getInstance().setImage(frame);
 			/////////////////////////
 			//  Collector Extender //
 			/////////////////////////
 			/*
 			if(manipulatorController.getPOV() != -1)
 			{
+				//change this
 				if(manipulatorController.getPOV() == 0 || manipulatorController.getPOV() == 315 || manipulatorController.getPOV() == 45)
 				{
 					if(frontCollector.get())
@@ -330,47 +406,47 @@ public class Robot extends SampleRobot {
         	dashCount++;
         	if(dashCount > 20000)
         		dashCount = 0;
-        	if(dashCount % 10 == 0)
+        	if(dashCount % 1 == 0)
         	{
-	        	dash.putBoolean("frontCollector", !frontCollector.get());
-	        	dash.putBoolean("rearCollector", !rearCollector.get());
+	        	SmartDashboard.putBoolean("frontCollector", !frontCollector.get());
+	        	SmartDashboard.putBoolean("rearCollector", !rearCollector.get());
 	        	
-	        	dash.putNumber("backRightErr", talon5.getError());
-	        	dash.putNumber("backLeftErr", talon4.getError());
-	        	dash.putNumber("frontRightErr", talon7.getError());
-	        	dash.putNumber("frontLeftErr", talon2.getError());
+	        	SmartDashboard.putNumber("backRightErr", talon5.getError());
+	        	SmartDashboard.putNumber("backLeftErr", talon4.getError());
+	        	SmartDashboard.putNumber("frontRightErr", talon7.getError());
+	        	SmartDashboard.putNumber("frontLeftErr", talon2.getError());
 	        	
-	        	dash.putNumber("brPos", brModule.getDoublePosition());
-	        	dash.putNumber("blPos", blModule.getDoublePosition());
-	        	dash.putNumber("frPos", frModule.getDoublePosition());
-	        	dash.putNumber("flPos", flModule.getDoublePosition());
+	        	SmartDashboard.putNumber("brPos", brModule.getDoublePosition());
+	        	SmartDashboard.putNumber("blPos", blModule.getDoublePosition());
+	        	SmartDashboard.putNumber("frPos", frModule.getDoublePosition());
+	        	SmartDashboard.putNumber("flPos", flModule.getDoublePosition());
 	        	
-	        	dash.putNumber("pos2", brModule.getModuloPosition());
-	        	dash.putNumber("pos3", brModule.getDesiredPosition());
+	        	SmartDashboard.putNumber("pos2", brModule.getModuloPosition());
+	        	SmartDashboard.putNumber("pos3", brModule.getDesiredPosition());
 	
-	        	dash.putBoolean("withinStopBR", brModule.withinRange());
-	        	dash.putBoolean("withinStopBL", blModule.withinRange());
-	        	dash.putBoolean("withinStopFR", frModule.withinRange());
-	        	dash.putBoolean("withinStopFL", flModule.withinRange());
+	        	SmartDashboard.putBoolean("withinStopBR", brModule.withinRange());
+	        	SmartDashboard.putBoolean("withinStopBL", blModule.withinRange());
+	        	SmartDashboard.putBoolean("withinStopFR", frModule.withinRange());
+	        	SmartDashboard.putBoolean("withinStopFL", flModule.withinRange());
 	        	
 	        	
-	        	dash.putNumber("powBR", talon5.getOutputCurrent());
-	        	dash.putNumber("powBL", talon4.getOutputCurrent());
-	        	dash.putNumber("powFR", talon7.getOutputCurrent());
-	        	dash.putNumber("powFL", talon2.getOutputCurrent());
+	        	SmartDashboard.putNumber("powBR", talon5.getOutputCurrent());
+	        	SmartDashboard.putNumber("powBL", talon4.getOutputCurrent());
+	        	SmartDashboard.putNumber("powFR", talon7.getOutputCurrent());
+	        	SmartDashboard.putNumber("powFL", talon2.getOutputCurrent());
 	        	
-	        	dash.putNumber("voltageBR", talon5.getOutputVoltage());
-	        	dash.putNumber("voltageBL", talon4.getOutputVoltage());
-	        	dash.putNumber("voltageFR", talon7.getOutputVoltage());
-	        	dash.putNumber("voltageFL", talon2.getOutputVoltage());
+	        	SmartDashboard.putNumber("voltageBR", talon5.getOutputVoltage());
+	        	SmartDashboard.putNumber("voltageBL", talon4.getOutputVoltage());
+	        	SmartDashboard.putNumber("voltageFR", talon7.getOutputVoltage());
+	        	SmartDashboard.putNumber("voltageFL", talon2.getOutputVoltage());
 	        	
-	        	dash.putBoolean("disabledBR", talon5.isDisabled());
-	        	dash.putBoolean("disabledBL", talon4.isDisabled());
-	        	dash.putBoolean("disabledFR", talon7.isDisabled());
-	        	dash.putBoolean("disabledFL", talon2.isDisabled());
+	        	SmartDashboard.putBoolean("disabledBR", talon5.isDisabled());
+	        	SmartDashboard.putBoolean("disabledBL", talon4.isDisabled());
+	        	SmartDashboard.putBoolean("disabledFR", talon7.isDisabled());
+	        	SmartDashboard.putBoolean("disabledFL", talon2.isDisabled());
 	        	
-	        	dash.putNumber("leftShooterCurrent", leftShooter.getOutputCurrent());
-	        	dash.putNumber("rightShooterCurrent", rightShooter.getOutputCurrent());
+	        	SmartDashboard.putNumber("leftShooterCurrent", leftShooter.getOutputCurrent());
+	        	SmartDashboard.putNumber("rightShooterCurrent", rightShooter.getOutputCurrent());
         	
         	
 				/////////////////////////
@@ -379,22 +455,22 @@ public class Robot extends SampleRobot {
 	        	temp[0] = talon5.getOutputCurrent();
 	        	if(temp[0] > maxVal[0])
 	        		maxVal[0] = temp[0];
-	        	dash.putNumber("maxBR", maxVal[0]);
+	        	SmartDashboard.putNumber("maxBR", maxVal[0]);
 	        	
 	        	temp[1] = talon4.getOutputCurrent();
 	        	if(temp[1] > maxVal[1])
 	        		maxVal[1] = temp[1];
-	        	dash.putNumber("maxBL", maxVal[1]);
+	        	SmartDashboard.putNumber("maxBL", maxVal[1]);
 	        	
 	        	temp[2] = talon7.getOutputCurrent();
 	        	if(temp[2] > maxVal[2])
 	        		maxVal[2] = temp[2];
-	        	dash.putNumber("maxFR", maxVal[2]);
+	        	SmartDashboard.putNumber("maxFR", maxVal[2]);
 	        	
 	        	temp[3] = talon2.getOutputCurrent();
 	        	if(temp[3] > maxVal[3])
 	        		maxVal[3] = temp[3];
-	        	dash.putNumber("maxFL", maxVal[3]);
+	        	SmartDashboard.putNumber("maxFL", maxVal[3]);
         	
         	}
 			/////////////////////////
@@ -461,10 +537,10 @@ public class Robot extends SampleRobot {
     {
     	while(isEnabled())
     	{
-	    	dash.putNumber("backRightErr", talon5.getError());
-	    	dash.putNumber("backLeftErr", talon4.getError());
-	    	dash.putNumber("frontRightErr", talon7.getError());
-	    	dash.putNumber("frontLeftErr", talon2.getError());
+    		SmartDashboard.putNumber("backRightErr", talon5.getError());
+    		SmartDashboard.putNumber("backLeftErr", talon4.getError());
+	    	SmartDashboard.putNumber("frontRightErr", talon7.getError());
+	    	SmartDashboard.putNumber("frontLeftErr", talon2.getError());
     	}
     }
 
