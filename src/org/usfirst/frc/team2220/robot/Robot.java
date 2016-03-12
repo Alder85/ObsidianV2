@@ -3,26 +3,15 @@ package org.usfirst.frc.team2220.robot;
 
 
 //import edu.wpi.first.wpilibj.*;
-import org.usfirst.frc.team2220.robot.XBoxController.Button;
-import org.usfirst.frc.team2220.robot.XBoxController.TriggerButton;
-
+import org.usfirst.frc.team2220.robot.XBoxController.*;
+import org.usfirst.frc.team2220.robot.XBoxController;
 import com.ni.vision.NIVision;
-import com.ni.vision.NIVision.Image;
-import com.ni.vision.NIVision.ImageType;
-
-import edu.wpi.first.wpilibj.CANTalon;
-import edu.wpi.first.wpilibj.CameraServer;
-import edu.wpi.first.wpilibj.CANTalon.FeedbackDevice;
-import edu.wpi.first.wpilibj.CANTalon.TalonControlMode;
-import edu.wpi.first.wpilibj.DigitalInput;
-import edu.wpi.first.wpilibj.DriverStation;
-import edu.wpi.first.wpilibj.Joystick;
-import edu.wpi.first.wpilibj.SampleRobot;
-import edu.wpi.first.wpilibj.Timer;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
-
-import java.io.FileNotFoundException;
-import java.io.IOException;
+import com.ni.vision.NIVision.*;
+import edu.wpi.first.wpilibj.*;
+import edu.wpi.first.wpilibj.CANTalon.*;
+import edu.wpi.first.wpilibj.interfaces.*;
+import edu.wpi.first.wpilibj.smartdashboard.*;
+import java.io.*;
 
 /**
  * This is 2220's test code
@@ -33,22 +22,7 @@ public class Robot extends SampleRobot {
 
     public Robot() {
         
-    }
-
-    /**
-     * Autonomous 
-     * @TODO
-     */
-    public void autonomous() {
-       
-    }
-
-    public double deadZone(double val, double zone)
-    {
-    	if(val < zone && val > -zone)
-    		return 0;
-    	return val;
-    }
+    }    
     
     TwilightTalon talon7 = new TwilightTalon(7);
 	ModuleRotation frModule = new ModuleRotation(talon7);
@@ -62,21 +36,18 @@ public class Robot extends SampleRobot {
 	TwilightTalon talon5 = new TwilightTalon(5);
 	ModuleRotation brModule = new ModuleRotation(talon5);
 	
-	SmartDashboard dash = new SmartDashboard();
-	//TwilightTalon[] talons = new TwilightTalon[16];
+	//SmartDashboard dash = new SmartDashboard();
+
 	TwilightTalon frWheel = new TwilightTalon(8);
 	TwilightTalon flWheel = new TwilightTalon(1);
 	TwilightTalon blWheel = new TwilightTalon(3);
 	TwilightTalon brWheel = new TwilightTalon(6);
 	
-	
-	
-	
-	
 	TwilightTalon collector = new TwilightTalon(10);
 	TwilightTalon rightShooter = new TwilightTalon(9);
 	TwilightTalon leftShooter  = new TwilightTalon(12);
 	
+	Gyro gyro = new AnalogGyro(0);
 	//TwilightTalon lifterRelease = new TwilightTalon(13);
 	//TwilightTalon wench = new TwilightTalon(14);
 	
@@ -107,35 +78,21 @@ public class Robot extends SampleRobot {
  	//testModule.changeControlMode(TalonControlMode.Position);
 	//testModule.setFeedbackDevice(FeedbackDevice.EncFalling);
 	
-	CameraServer server;
+	CameraServer server; //.setQuality if necessary
 	Image frame;
 	boolean isCam1 = false;
 	int session0, session1;
 	double prevPOVval= 0;
+	
+	double allTuning;
 	public void robotInit()
 	{
 		frame = NIVision.imaqCreateImage(ImageType.IMAGE_RGB, 0);
 		session0 = NIVision.IMAQdxOpenCamera("cam0", NIVision.IMAQdxCameraControlMode.CameraControlModeController);
 		session1 = NIVision.IMAQdxOpenCamera("cam1", NIVision.IMAQdxCameraControlMode.CameraControlModeController);
 		NIVision.IMAQdxConfigureGrab(session0);
-    }
-	/**
-     * TeleOp
-     * @TODO
-     */
-    public void operatorControl() {
-    	
-    	
-        //NIVision.imaqdxgr
-        //NIVision.IMAQdxConfigureGrab(session1);
-    	//server = CameraServer.getInstance();
-        //server.setQuality(50);
-        //the camera name (ex "cam0") can be found through the roborio web interface
-        //server.startAutomaticCapture("cam0");
-        //server.startAutomaticCapture("cam1");
-    	//don't declare stuff here
-    	
-    	collectorExtender.enableBrakeMode(true);
+		
+		collectorExtender.enableBrakeMode(true);
     	
     	frWheel.setMaxCurrent(100);
     	flWheel.setMaxCurrent(100);
@@ -172,7 +129,7 @@ public class Robot extends SampleRobot {
     	leftShooter.changeControlMode(TalonControlMode.Voltage);
     	leftShooter.reverseOutput(true);
     	
-    	double allTuning = 1.5;
+    	allTuning = 1.5;
     	
     	frModule.setP(allTuning);
     	brModule.setP(allTuning);
@@ -181,6 +138,36 @@ public class Robot extends SampleRobot {
     	
     	drivetrain.setModules(flModule, frModule, brModule, blModule);
     	drivetrain.setWheels(flWheel, frWheel, brWheel, blWheel);
+    }
+	
+	Autonomous autonomous = new Autonomous(drivetrain, gyro);
+	Accelerometer accel = new BuiltInAccelerometer();
+	/**
+     * Autonomous 
+     * @TODO
+     */
+    public void autonomous() 
+    {
+    	frWheel.enableBrakeMode(true);
+    	flWheel.enableBrakeMode(true);
+    	brWheel.enableBrakeMode(true);
+    	blWheel.enableBrakeMode(true);
+    	autonomous.driveGyro(2, 0.6); //this goes under low bar from start position
+       //autonomous.turnGyro(90, 0.7);
+
+    }
+    
+	/**
+     * TeleOp
+     * @TODO
+     */
+    public void operatorControl() {
+    	//don't declare stuff here
+    	frWheel.enableBrakeMode(false);
+    	flWheel.enableBrakeMode(false);
+    	brWheel.enableBrakeMode(false);
+    	blWheel.enableBrakeMode(false);
+    	
     	/*
     	lifterRelease.setFeedbackDevice(FeedbackDevice.PulseWidth);
     	lifterRelease.changeControlMode(TalonControlMode.Position);
@@ -192,9 +179,7 @@ public class Robot extends SampleRobot {
     	*/
     	double leftAxis, rightAxis;
     	double wenchAxis;
-    	double[] maxVal = new double[4];
     	double wheelDZ = 0.15;
-    	double[] temp = new double[4];
     	double tempTune;
     	int dashCount = 0;
     	
@@ -243,7 +228,7 @@ public class Robot extends SampleRobot {
 			//     Drive Wheels    //
 			/////////////////////////
         	leftAxis = deadZone(driverController.getRawAxis(1), wheelDZ);
-        	rightAxis = deadZone(driverController.getRawAxis(5) * -1, wheelDZ);
+        	rightAxis = deadZone(driverController.getRawAxis(5)/* * -1*/, wheelDZ); //unreversed
         	
         	drivetrain.setLeftWheels(leftAxis);
         	drivetrain.setRightWheels(rightAxis);
@@ -408,70 +393,7 @@ public class Robot extends SampleRobot {
         		dashCount = 0;
         	if(dashCount % 1 == 0)
         	{
-	        	SmartDashboard.putBoolean("frontCollector", !frontCollector.get());
-	        	SmartDashboard.putBoolean("rearCollector", !rearCollector.get());
-	        	
-	        	SmartDashboard.putNumber("backRightErr", talon5.getError());
-	        	SmartDashboard.putNumber("backLeftErr", talon4.getError());
-	        	SmartDashboard.putNumber("frontRightErr", talon7.getError());
-	        	SmartDashboard.putNumber("frontLeftErr", talon2.getError());
-	        	
-	        	SmartDashboard.putNumber("brPos", brModule.getDoublePosition());
-	        	SmartDashboard.putNumber("blPos", blModule.getDoublePosition());
-	        	SmartDashboard.putNumber("frPos", frModule.getDoublePosition());
-	        	SmartDashboard.putNumber("flPos", flModule.getDoublePosition());
-	        	
-	        	SmartDashboard.putNumber("pos2", brModule.getModuloPosition());
-	        	SmartDashboard.putNumber("pos3", brModule.getDesiredPosition());
-	
-	        	SmartDashboard.putBoolean("withinStopBR", brModule.withinRange());
-	        	SmartDashboard.putBoolean("withinStopBL", blModule.withinRange());
-	        	SmartDashboard.putBoolean("withinStopFR", frModule.withinRange());
-	        	SmartDashboard.putBoolean("withinStopFL", flModule.withinRange());
-	        	
-	        	
-	        	SmartDashboard.putNumber("powBR", talon5.getOutputCurrent());
-	        	SmartDashboard.putNumber("powBL", talon4.getOutputCurrent());
-	        	SmartDashboard.putNumber("powFR", talon7.getOutputCurrent());
-	        	SmartDashboard.putNumber("powFL", talon2.getOutputCurrent());
-	        	
-	        	SmartDashboard.putNumber("voltageBR", talon5.getOutputVoltage());
-	        	SmartDashboard.putNumber("voltageBL", talon4.getOutputVoltage());
-	        	SmartDashboard.putNumber("voltageFR", talon7.getOutputVoltage());
-	        	SmartDashboard.putNumber("voltageFL", talon2.getOutputVoltage());
-	        	
-	        	SmartDashboard.putBoolean("disabledBR", talon5.isDisabled());
-	        	SmartDashboard.putBoolean("disabledBL", talon4.isDisabled());
-	        	SmartDashboard.putBoolean("disabledFR", talon7.isDisabled());
-	        	SmartDashboard.putBoolean("disabledFL", talon2.isDisabled());
-	        	
-	        	SmartDashboard.putNumber("leftShooterCurrent", leftShooter.getOutputCurrent());
-	        	SmartDashboard.putNumber("rightShooterCurrent", rightShooter.getOutputCurrent());
-        	
-        	
-				/////////////////////////
-				//     Max Currents    //
-				/////////////////////////
-	        	temp[0] = talon5.getOutputCurrent();
-	        	if(temp[0] > maxVal[0])
-	        		maxVal[0] = temp[0];
-	        	SmartDashboard.putNumber("maxBR", maxVal[0]);
-	        	
-	        	temp[1] = talon4.getOutputCurrent();
-	        	if(temp[1] > maxVal[1])
-	        		maxVal[1] = temp[1];
-	        	SmartDashboard.putNumber("maxBL", maxVal[1]);
-	        	
-	        	temp[2] = talon7.getOutputCurrent();
-	        	if(temp[2] > maxVal[2])
-	        		maxVal[2] = temp[2];
-	        	SmartDashboard.putNumber("maxFR", maxVal[2]);
-	        	
-	        	temp[3] = talon2.getOutputCurrent();
-	        	if(temp[3] > maxVal[3])
-	        		maxVal[3] = temp[3];
-	        	SmartDashboard.putNumber("maxFL", maxVal[3]);
-        	
+        		printEverything();
         	}
 			/////////////////////////
 			//   Test All Modules  //
@@ -484,12 +406,8 @@ public class Robot extends SampleRobot {
         	talon7.test();
         	talon2.test();
         	talon4.test();
-        	
         	talon5.test();
-        	
-        	
-        	
-        	
+
         	if((talon7.isDisabled() || talon2.isDisabled() || talon4.isDisabled() || talon5.isDisabled()))
         	{
         		//resetTimer.start();
@@ -533,6 +451,90 @@ public class Robot extends SampleRobot {
             Timer.delay(0.005);		// wait for a motor update time
         }
     }
+    
+	
+    public void printEverything()
+    {
+    	SmartDashboard.putNumber("roboRio accelX", accel.getX());
+        SmartDashboard.putNumber("roboRio accelY", accel.getY());
+        SmartDashboard.putNumber("roboRio accelZ", accel.getZ());
+    	SmartDashboard.putNumber("gyro", gyro.getAngle());
+    	
+    	SmartDashboard.putBoolean("frontCollector", !frontCollector.get());
+    	SmartDashboard.putBoolean("rearCollector", !rearCollector.get());
+    	
+    	SmartDashboard.putNumber("backRightErr", talon5.getError());
+    	SmartDashboard.putNumber("backLeftErr", talon4.getError());
+    	SmartDashboard.putNumber("frontRightErr", talon7.getError());
+    	SmartDashboard.putNumber("frontLeftErr", talon2.getError());
+    	
+    	SmartDashboard.putNumber("brPos", brModule.getDoublePosition());
+    	SmartDashboard.putNumber("blPos", blModule.getDoublePosition());
+    	SmartDashboard.putNumber("frPos", frModule.getDoublePosition());
+    	SmartDashboard.putNumber("flPos", flModule.getDoublePosition());
+    	
+    	SmartDashboard.putNumber("pos2", brModule.getModuloPosition());
+    	SmartDashboard.putNumber("pos3", brModule.getDesiredPosition());
+
+    	SmartDashboard.putBoolean("withinStopBR", brModule.withinRange());
+    	SmartDashboard.putBoolean("withinStopBL", blModule.withinRange());
+    	SmartDashboard.putBoolean("withinStopFR", frModule.withinRange());
+    	SmartDashboard.putBoolean("withinStopFL", flModule.withinRange());
+    	
+    	
+    	SmartDashboard.putNumber("powBR", talon5.getOutputCurrent());
+    	SmartDashboard.putNumber("powBL", talon4.getOutputCurrent());
+    	SmartDashboard.putNumber("powFR", talon7.getOutputCurrent());
+    	SmartDashboard.putNumber("powFL", talon2.getOutputCurrent());
+    	
+    	SmartDashboard.putNumber("voltageBR", talon5.getOutputVoltage());
+    	SmartDashboard.putNumber("voltageBL", talon4.getOutputVoltage());
+    	SmartDashboard.putNumber("voltageFR", talon7.getOutputVoltage());
+    	SmartDashboard.putNumber("voltageFL", talon2.getOutputVoltage());
+    	
+    	SmartDashboard.putBoolean("disabledBR", talon5.isDisabled());
+    	SmartDashboard.putBoolean("disabledBL", talon4.isDisabled());
+    	SmartDashboard.putBoolean("disabledFR", talon7.isDisabled());
+    	SmartDashboard.putBoolean("disabledFL", talon2.isDisabled());
+    	
+    	SmartDashboard.putNumber("leftShooterCurrent", leftShooter.getOutputCurrent());
+    	SmartDashboard.putNumber("rightShooterCurrent", rightShooter.getOutputCurrent());
+	
+	
+		/////////////////////////
+		//     Max Currents    //
+		/////////////////////////
+    	double[] maxVal = new double[4];
+    	double[] temp = new double[4];
+    	
+    	temp[0] = talon5.getOutputCurrent();
+    	if(temp[0] > maxVal[0])
+    		maxVal[0] = temp[0];
+    	SmartDashboard.putNumber("maxBR", maxVal[0]);
+    	
+    	temp[1] = talon4.getOutputCurrent();
+    	if(temp[1] > maxVal[1])
+    		maxVal[1] = temp[1];
+    	SmartDashboard.putNumber("maxBL", maxVal[1]);
+    	
+    	temp[2] = talon7.getOutputCurrent();
+    	if(temp[2] > maxVal[2])
+    		maxVal[2] = temp[2];
+    	SmartDashboard.putNumber("maxFR", maxVal[2]);
+    	
+    	temp[3] = talon2.getOutputCurrent();
+    	if(temp[3] > maxVal[3])
+    		maxVal[3] = temp[3];
+    	SmartDashboard.putNumber("maxFL", maxVal[3]);
+    	
+    }
+    public double deadZone(double val, double zone)
+    {
+    	if(val < zone && val > -zone)
+    		return 0;
+    	return val;
+    }
+    
     public void practice()
     {
     	while(isEnabled())

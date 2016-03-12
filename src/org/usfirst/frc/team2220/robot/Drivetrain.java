@@ -36,8 +36,8 @@ public class Drivetrain {
 	 */
 	public void setRightWheels(double pow)
 	{
-		frW.set(pow);
-		brW.set(pow);
+		frW.set(-pow);
+		brW.set(-pow);
 	}
 	
 	/**

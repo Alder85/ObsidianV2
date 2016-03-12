@@ -105,6 +105,33 @@ public class XBoxController extends Joystick{
 		return (x.currVal[joystickNumber] < 0.85 && x.oldVal[joystickNumber] > 0.85);
 	}
 	
+	public enum POV
+	{
+		POV(0);
+		
+		private int value;
+		private double oldVal = -1, currVal = -1;
+		private POV(int val)
+		{
+			this.value = val;
+		}
+	}
+	
+	public boolean onPressPOVVal(POV x, double val)
+	{
+		return (x.oldVal != val) && (x.currVal == val);
+	}
+	
+	public boolean whileHeldPOVVal(POV x, double val)
+	{
+		return (x.oldVal == x.currVal);
+	}
+	
+	public boolean onReleasePOVVal(POV x, double val)
+	{
+		return (x.oldVal == val) && (x.currVal != val);
+	}
+	
 	/*
 	 * Call this once per robot loop
 	 * This will be able to differentiate pressed, held and released
@@ -122,6 +149,9 @@ public class XBoxController extends Joystick{
 		
 		TriggerButton.lTrigger.oldVal[joystickNumber] = TriggerButton.lTrigger.currVal[joystickNumber];
 		TriggerButton.lTrigger.currVal[joystickNumber] = this.getRawAxis(2);
+		
+		POV.POV.oldVal = POV.POV.currVal;
+		POV.POV.currVal = this.getPOV();
 		
 	}
 }
