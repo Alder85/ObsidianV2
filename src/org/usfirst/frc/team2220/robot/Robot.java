@@ -80,17 +80,21 @@ public class Robot extends SampleRobot {
 	
 	CameraServer server; //.setQuality if necessary
 	Image frame;
-	boolean isCam1 = false;
+	boolean isCam1 = true;
 	int session0, session1;
 	double prevPOVval= 0;
 	
 	double allTuning;
+	ImageProcessor processor;
+	Autonomous autonomous;
 	public void robotInit()
 	{
 		frame = NIVision.imaqCreateImage(ImageType.IMAGE_RGB, 0);
 		session0 = NIVision.IMAQdxOpenCamera("cam0", NIVision.IMAQdxCameraControlMode.CameraControlModeController);
 		session1 = NIVision.IMAQdxOpenCamera("cam1", NIVision.IMAQdxCameraControlMode.CameraControlModeController);
-		NIVision.IMAQdxConfigureGrab(session0);
+		NIVision.IMAQdxConfigureGrab(session1);
+		processor = new ImageProcessor(session1);
+		
 		
 		collectorExtender.enableBrakeMode(true);
     	
@@ -129,6 +133,7 @@ public class Robot extends SampleRobot {
     	leftShooter.changeControlMode(TalonControlMode.Voltage);
     	leftShooter.reverseOutput(true);
     	
+    	autonomous = new Autonomous(drivetrain, gyro, collector, leftShooter, rightShooter, processor);
     	allTuning = 1.5;
     	
     	frModule.setP(allTuning);
@@ -140,8 +145,9 @@ public class Robot extends SampleRobot {
     	drivetrain.setWheels(flWheel, frWheel, brWheel, blWheel);
     }
 	
-	Autonomous autonomous = new Autonomous(drivetrain, gyro);
+	
 	Accelerometer accel = new BuiltInAccelerometer();
+	boolean autoShooting = false;
 	/**
      * Autonomous 
      * @TODO
@@ -152,7 +158,10 @@ public class Robot extends SampleRobot {
     	flWheel.enableBrakeMode(true);
     	brWheel.enableBrakeMode(true);
     	blWheel.enableBrakeMode(true);
-    	autonomous.driveGyro(2, 0.6); //this goes under low bar from start position
+    	//autonomous.driveGyro(3.1, 0.6); //this goes under low bar from start position
+    	//autonomous.turnGyro(55, 0.6); //turn
+    	autonomous.lineUpToShoot();
+    	autonomous.shoot();
        //autonomous.turnGyro(90, 0.7);
 
     }
@@ -241,44 +250,41 @@ public class Robot extends SampleRobot {
 			/////////////////////////
 			//      Collector      //
 			/////////////////////////
-			
-			if(manipulatorController.whileHeld(TriggerButton.lTrigger)) //intake
+			if(!autoShooting)
 			{
-				//if(rearCollector.get())
-				//{
-					collector.set(1.0);
-					
-				//}
-				//else
-					//collector.set(0);
+				if(manipulatorController.whileHeld(TriggerButton.lTrigger)) //intake
+				{
+					//if(rearCollector.get())
+						collector.set(1.0);
+				}
+				else if(manipulatorController.whileHeld(TriggerButton.rTrigger))
+				{
+					//if(rearCollector.get())
+						collector.set(-1.0);
+				}
+				else
+					collector.set(0);
 			}
-			else if(manipulatorController.whileHeld(TriggerButton.rTrigger))
-			{
-				//if(rearCollector.get())
-				//{
-					collector.set(-1.0);
-				//}
-				//else
-					//collector.set(0);
-			}
-			else
-				collector.set(0);
 			
 			/////////////////////////
 			//    Shooter Wheels   //
 			/////////////////////////
 			if(manipulatorController.whileHeld(Button.aButton))
 			{
+				autoShooting = true;
+				double shotLength = 1.5;
 				if(shootTimer.get() == 0)
 					shootTimer.start();
 				rightShooter.set(shooterVoltage);
 				leftShooter.set(-shooterVoltage);
-        		//rightShooter.set(1.0);
-        		//leftShooter.set(-1.0);
+				if(shootTimer.get() > shotLength)
+				{
+					collector.set(1.0);
+				}
         	}
         	else
         	{
-        		rightShooter.set(0);
+        		autoShooting = false;
         		rightShooter.set(0);
         		leftShooter.set(0);
         		shootTimer.reset();

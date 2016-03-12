@@ -12,15 +12,69 @@ import java.io.*;
 public class Autonomous {
 	Drivetrain drivetrain;
 	Gyro gyro;
+	TwilightTalon collector, rightShooter, leftShooter;
 	Timer timer;
+	ImageProcessor processor;
 	
-	public Autonomous(Drivetrain inDrivetrain, Gyro inGyro)
+	
+	public Autonomous(Drivetrain inDrivetrain, Gyro inGyro, TwilightTalon inCollector, TwilightTalon inRShooter, TwilightTalon inLShooter, ImageProcessor inProcessor)
 	{
 		drivetrain = inDrivetrain;
 		gyro = inGyro;
 		timer = new Timer();
+		collector = inCollector;
+		rightShooter = inRShooter;
+		leftShooter = inLShooter;
+		processor = inProcessor;
+	}
+	public void shoot()
+	{
+		double voltVal = 9;
+		/*
+		if(processor.getHeightDistance() > 100)
+		{
+			voltVal = 9;
+		}
+		*/
+			collector.set(-1.0);
+			Timer.delay(0.05);
+			collector.set(0);
+			rightShooter.set(-voltVal);
+			leftShooter.set(voltVal);
+			Timer.delay(2.25);
+			collector.set(1.0);
+			Timer.delay(2.0);
+			rightShooter.set(0);
+			leftShooter.set(0);
+			collector.set(0);
 	}
 	
+	public void lineUpToShoot()
+	{
+		while(true)
+		{
+			double temp = processor.getLeftRightDistance();
+			SmartDashboard.putNumber("leftRight", temp);
+			//right - left
+			//if right bound positive
+			//if left bound negative
+			if(temp > 20 || temp < -15)
+			{
+				double temp2 = temp / 90;
+				if(temp2 > 0.5)
+					temp2 = 0.5;
+				else if(temp2 < -0.5)
+					temp2 = -0.5;
+				drivetrain.setLeftWheels(temp2);
+				drivetrain.setRightWheels(-temp2); //right reversed
+				Timer.delay(0.25);
+				drivetrain.setLeftWheels(0);
+				drivetrain.setRightWheels(0);
+			}
+			else
+				break;
+		}
+	}
 	public void turnGyro(double degrees, double motorPower)
 	{
 		double desiredVal = gyro.getAngle() + degrees;
