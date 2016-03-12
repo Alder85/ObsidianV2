@@ -161,6 +161,8 @@ public class Robot extends SampleRobot {
     	//autonomous.driveGyro(3.1, 0.6); //this goes under low bar from start position
     	//autonomous.turnGyro(55, 0.6); //turn
     	autonomous.lineUpToShoot();
+    	autonomous.forwardBackwardToShoot();
+    	autonomous.lineUpToShoot();
     	autonomous.shoot();
        //autonomous.turnGyro(90, 0.7);
 

@@ -57,7 +57,7 @@ public class ImageProcessor {
 	}
 	
 	
-	void lookForTarget()
+	boolean lookForTarget()
 	{
 		//get image and particle numbers
 		NIVision.IMAQdxGrab(session, frame, 1);
@@ -94,7 +94,7 @@ public class ImageProcessor {
 			if(particles.size() == 0)
 			{
 				CameraServer.getInstance().setImage(frame);
-				return;
+				return false;
 			}
 			
 			
@@ -150,24 +150,27 @@ public class ImageProcessor {
 			//SmartDashboard.putBoolean("IsTote", isTote);
 			distance = computeDistance(binaryFrame, particles.elementAt(0));
 			SmartDashboard.putNumber("Distance", distance);
+			return true;
 		}
 		else 
 		{
 			//SmartDashboard.putBoolean("IsTote", false);
 			CameraServer.getInstance().setImage(frame);
+			return false;
 		}
 	}
 	
 	public double getLeftRightDistance()
 	{
-		double loopTimes = 3;
+		double loopTimes = 1;
 		double tempLeft = 0, tempRight = 0;
 		for(int i = 0;i < loopTimes;i++)
 		{
-			lookForTarget();
-			//Timer.delay(0.05);
-			tempLeft += leftDistance;
-			tempRight += rightDistance;
+			if(lookForTarget())
+			{
+				tempLeft += leftDistance;
+				tempRight += rightDistance;
+			}
 		}
 		tempLeft /= loopTimes;
 		tempRight /= loopTimes;

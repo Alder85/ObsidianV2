@@ -27,21 +27,16 @@ public class Autonomous {
 		leftShooter = inLShooter;
 		processor = inProcessor;
 	}
+	
 	public void shoot()
 	{
-		double voltVal = 9;
-		/*
-		if(processor.getHeightDistance() > 100)
-		{
-			voltVal = 9;
-		}
-		*/
+		double voltVal = 8.5;
 			collector.set(-1.0);
 			Timer.delay(0.05);
 			collector.set(0);
 			rightShooter.set(-voltVal);
 			leftShooter.set(voltVal);
-			Timer.delay(2.25);
+			Timer.delay(1.1);
 			collector.set(1.0);
 			Timer.delay(2.0);
 			rightShooter.set(0);
@@ -49,25 +44,57 @@ public class Autonomous {
 			collector.set(0);
 	}
 	
+	public void forwardBackwardToShoot()
+	{
+		while(true)
+		{
+			Timer.delay(0.1);
+			processor.lookForTarget();
+			if(processor.getHeightDistance() > 170) //higher = closer
+			{
+				drivetrain.setLeftWheels(-0.5);
+				drivetrain.setRightWheels(-0.5);
+				Timer.delay(0.1);
+			}
+			else if(processor.getHeightDistance() < 160) //lower = farther
+			{
+				drivetrain.setLeftWheels(0.5);
+				drivetrain.setRightWheels(0.5);
+				Timer.delay(0.1);
+			}
+			else
+				break;
+			drivetrain.setLeftWheels(0);
+			drivetrain.setRightWheels(0);
+		}
+	}
+	
 	public void lineUpToShoot()
 	{
 		while(true)
 		{
+			Timer.delay(0.1); //allows robot to settle
 			double temp = processor.getLeftRightDistance();
 			SmartDashboard.putNumber("leftRight", temp);
 			//right - left
 			//if right bound positive
 			//if left bound negative
-			if(temp > 20 || temp < -15)
+			//if you want to bias right, increase negative allowance
+			//if you want to bias left, increase positive allowance
+			if(temp == 0)
 			{
-				double temp2 = temp / 90;
+				//look again
+			}
+			else if(temp > 25 || temp < -10)
+			{
+				double temp2 = temp / 80;
 				if(temp2 > 0.5)
 					temp2 = 0.5;
 				else if(temp2 < -0.5)
 					temp2 = -0.5;
 				drivetrain.setLeftWheels(temp2);
 				drivetrain.setRightWheels(-temp2); //right reversed
-				Timer.delay(0.25);
+				Timer.delay(0.1);
 				drivetrain.setLeftWheels(0);
 				drivetrain.setRightWheels(0);
 			}
