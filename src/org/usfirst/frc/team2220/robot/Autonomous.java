@@ -102,6 +102,21 @@ public class Autonomous {
 				break;
 		}
 	}
+	
+	public void goDown()
+	{
+		drivetrain.turnInwards();
+		Timer.delay(0.25);
+		drivetrain.turnInwards();
+		Timer.delay(0.1);
+	}
+	public void goUp()
+	{
+		drivetrain.turnOutwards();
+		Timer.delay(0.1);
+		drivetrain.turnOutwards();
+		Timer.delay(0.1);
+	}
 	public void turnGyro(double degrees, double motorPower)
 	{
 		double desiredVal = gyro.getAngle() + degrees;

@@ -12,6 +12,7 @@ import edu.wpi.first.wpilibj.CANTalon.*;
 import edu.wpi.first.wpilibj.interfaces.*;
 import edu.wpi.first.wpilibj.smartdashboard.*;
 import java.io.*;
+import java.util.ArrayList;
 
 /**
  * This is 2220's test code
@@ -67,8 +68,8 @@ public class Robot extends SampleRobot {
 	XBoxController manipulatorController = new XBoxController(1);
 	
 	
-	DigitalInput frontCollector = new DigitalInput(1);
-	DigitalInput rearCollector  = new DigitalInput(2);
+	DigitalInput frontCollector = new DigitalInput(0);
+	DigitalInput rearCollector  = new DigitalInput(1);
 	
 	
 	Timer resetTimer = new Timer();
@@ -87,8 +88,28 @@ public class Robot extends SampleRobot {
 	double allTuning;
 	ImageProcessor processor;
 	Autonomous autonomous;
+	SerialPort serial;
+    private static final int RIODUINO_SERIAL_BAUD = 9600;
+    private static final SerialPort.Port RIODUINO_SERIAL_PORT = SerialPort.Port.kMXP;
+    private static final SerialPort.WriteBufferMode RIODUINO_SERIAL_WRITE_BUFFER_MODE = SerialPort.WriteBufferMode.kFlushOnAccess;
+    private static final double RIODUINO_SERIAL_TIMEOUT = 1;
+    private static final SerialPort.FlowControl RIODUINO_SERIAL_FLOW_CONTROL = SerialPort.FlowControl.kNone;
+    int nbytes;
+    byte[] buffer = new byte[8];
+    boolean LEDon = false;
+    boolean cmd_sent = false;
+
 	public void robotInit()
 	{
+		serial = new SerialPort(RIODUINO_SERIAL_BAUD, RIODUINO_SERIAL_PORT);
+		serial.reset();
+        serial.setWriteBufferMode(RIODUINO_SERIAL_WRITE_BUFFER_MODE);
+        serial.setReadBufferSize(1);
+        serial.setWriteBufferSize(1);
+        serial.setTimeout(RIODUINO_SERIAL_TIMEOUT);
+        serial.setFlowControl(RIODUINO_SERIAL_FLOW_CONTROL);
+        serial.disableTermination();
+
 		frame = NIVision.imaqCreateImage(ImageType.IMAGE_RGB, 0);
 		session0 = NIVision.IMAQdxOpenCamera("cam0", NIVision.IMAQdxCameraControlMode.CameraControlModeController);
 		session1 = NIVision.IMAQdxOpenCamera("cam1", NIVision.IMAQdxCameraControlMode.CameraControlModeController);
@@ -148,6 +169,7 @@ public class Robot extends SampleRobot {
 	
 	Accelerometer accel = new BuiltInAccelerometer();
 	boolean autoShooting = false;
+	double shotLength = 1.375;
 	/**
      * Autonomous 
      * @TODO
@@ -158,16 +180,24 @@ public class Robot extends SampleRobot {
     	flWheel.enableBrakeMode(true);
     	brWheel.enableBrakeMode(true);
     	blWheel.enableBrakeMode(true);
+    	//lowbar
+    	/*
     	//autonomous.driveGyro(3.1, 0.6); //this goes under low bar from start position
     	//autonomous.turnGyro(55, 0.6); //turn
     	autonomous.lineUpToShoot();
     	autonomous.forwardBackwardToShoot();
     	autonomous.lineUpToShoot();
     	autonomous.shoot();
-       //autonomous.turnGyro(90, 0.7);
+    	*/
+    	//end lowbar
+    	//autonomous.driveGyro(0.5, 0.5);
+    	autonomous.goUp();
+    	autonomous.driveGyro(1.0, 1.0);
+    	//Timer.delay(3);
+    	
+    	//autonomous.goDown();
 
     }
-    
 	/**
      * TeleOp
      * @TODO
@@ -193,10 +223,39 @@ public class Robot extends SampleRobot {
     	double wheelDZ = 0.15;
     	double tempTune;
     	int dashCount = 0;
-    	
     	double shooterVoltage = 10;
-    	
+    	ArrayList<Integer> lidarValues = new ArrayList();
+    	int lidarSum = 0;
+    	int newVal = 0;
         while (isOperatorControl() && isEnabled()) {
+			/////////////////////////
+			//         LIDAR       //
+			/////////////////////////
+        	
+            //System.out.println("Checkpoint S2");
+        	//10111010
+        	//
+        	nbytes = serial.getBytesReceived();
+            if (nbytes > 0) 
+            {
+                buffer = serial.read(nbytes);
+                newVal = ((buffer[0] & 0xFF) << 8 | (buffer[1] & 0xFF));
+                if(lidarValues.size() > 5)
+                {
+                	if(newVal < lidarSum + 1000)
+                		lidarValues.add(newVal);
+                		
+                }
+                else
+                	lidarValues.add(newVal);
+            }
+            if(lidarValues.size() > 10)
+            	lidarValues.remove(0);
+            lidarSum = 0;
+            for(int i = 0;i < lidarValues.size();i++)
+            	lidarSum += lidarValues.get(i);
+            SmartDashboard.putNumber("rawLidar", newVal);
+            SmartDashboard.putNumber("lidar", lidarSum / lidarValues.size());
 			/////////////////////////
 			//  Primary Controller //
 			/////////////////////////
@@ -271,10 +330,14 @@ public class Robot extends SampleRobot {
 			/////////////////////////
 			//    Shooter Wheels   //
 			/////////////////////////
+			shooterVoltage = (12.2204) * Math.pow((.99989), (lidarSum / lidarValues.size()));
+			if(shooterVoltage < 8.9)
+				shooterVoltage = 8.9;
+			
+			
 			if(manipulatorController.whileHeld(Button.aButton))
 			{
 				autoShooting = true;
-				double shotLength = 1.5;
 				if(shootTimer.get() == 0)
 					shootTimer.start();
 				rightShooter.set(shooterVoltage);
@@ -292,17 +355,28 @@ public class Robot extends SampleRobot {
         		shootTimer.reset();
         	}
 			
-			double changeConstant = 0.5;
+			
+			/*
 			if(manipulatorController.onPress(Button.lBumper))
 			{
-				shooterVoltage -= changeConstant;
+				shooterVoltage = 8.5;
+				shotLength = 1.3;
 			}
 			if(manipulatorController.onPress(Button.rBumper))
 			{
-				shooterVoltage += changeConstant;
+				shooterVoltage = 10.5;
+				shotLength = 1.5;
 			}
 			
+			try
+			{
+				shooterVoltage = SmartDashboard.getNumber("shooterVoltage");
+				shotLength = SmartDashboard.getNumber("shotLength");
+			}
+			catch(Exception e){}
+			*/
 			SmartDashboard.putNumber("shooterVoltage", shooterVoltage);
+			SmartDashboard.putNumber("shotLength", shotLength);
 			
 			SmartDashboard.putNumber("rightShooterVoltage", rightShooter.getOutputVoltage());
 			SmartDashboard.putNumber("leftShooterVoltage", leftShooter.getOutputVoltage());
@@ -340,21 +414,21 @@ public class Robot extends SampleRobot {
 			/////////////////////////
 			//  Collector Extender //
 			/////////////////////////
-			/*
+			
 			if(manipulatorController.getPOV() != -1)
 			{
 				//change this
-				if(manipulatorController.getPOV() == 0 || manipulatorController.getPOV() == 315 || manipulatorController.getPOV() == 45)
+				if(manipulatorController.getPOV() == 0) //forwards
 				{
 					if(frontCollector.get())
-	        			collectorExtender.set(-1.0);
+	        			collectorExtender.set(1.0);
 	        		else
 	        			collectorExtender.set(0);
 				}
-				else if(manipulatorController.getPOV() == 135 || manipulatorController.getPOV() == 180 || manipulatorController.getPOV() == 225)
+				else if(manipulatorController.getPOV() == 180)
 				{
 					if(rearCollector.get())
-	        			collectorExtender.set(1.0);
+	        			collectorExtender.set(-1.0);
 	        		else
 	        			collectorExtender.set(0);
 				}
@@ -367,7 +441,7 @@ public class Robot extends SampleRobot {
         	{
         		collectorExtender.set(0);
         	}
-        	*/
+        	
 			
 			/////////////////////////
 			//        Lifter       //
