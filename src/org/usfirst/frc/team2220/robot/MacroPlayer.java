@@ -7,7 +7,7 @@ import java.util.Scanner;
 
 /**
  * Plays back stuff from MacroRecorder
- * @author potatoe420
+ * @author Josh
  *
  */
 public class MacroPlayer {
@@ -17,7 +17,10 @@ public class MacroPlayer {
 	boolean onTime = true;
 	double nextDouble;
 	
-
+	/**
+	 * Reads a file
+	 * @throws FileNotFoundException if the file doesnt exist
+	 */
 	public MacroPlayer() throws FileNotFoundException
 	{
 		//Scanner reads from the file recorded in MacroRecorder
@@ -31,7 +34,7 @@ public class MacroPlayer {
 	}
 	
 	/**
-	 * Plays values prviously stored in the file
+	 * Plays values previously stored in the file
 	 * @param drivetrain drivetrain to use
 	 */
 	public void play(Drivetrain drivetrain)
@@ -91,7 +94,8 @@ public class MacroPlayer {
 	}
 	
 	/**
-	 * Stops motors and stops playin stuff
+	 * Stops motors and stops playing stuff
+	 * @param drivetrain to stop moving
 	 */
 	public void end(Drivetrain drivetrain)
 	{

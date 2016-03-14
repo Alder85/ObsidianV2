@@ -2,14 +2,21 @@ package org.usfirst.frc.team2220.robot;
 
 import edu.wpi.first.wpilibj.CANTalon.FeedbackDevice;
 import edu.wpi.first.wpilibj.Joystick;
-
+/**
+ * The much needed extension of the inadequate Joystick class, XBoxController.<br>
+ * Keeps track of button states and divides them into onPress, whileHeld, and onRelease.<br>
+ * Only catch is that XBoxController.update() must be called once per loop
+ * @author Josh
+ *
+ */
 public class XBoxController extends Joystick{
 	
 	private Button[] buttonArray = new Button[13];
 	private int joystickNumber;
 	
-	/*
+	/**
 	 * Initalize button array
+	 * @param in the port of the joystick
 	 */
 	public XBoxController(int in)
 	{
@@ -28,8 +35,10 @@ public class XBoxController extends Joystick{
 		
 	}
 	
-	/*
+	/**
 	 * enum for all Button (not axes) types on xbox controller
+	 * @author Josh
+	 *
 	 */
 	public enum Button {
 	    aButton(1), bButton(2), xButton(3), yButton(4), lBumper(5), 
@@ -44,30 +53,41 @@ public class XBoxController extends Joystick{
 	    }
 	}
 		
-	/*
-	 * true only once when button is pressed
+	/**
+	 * 
+	 * @param x button number to use
+	 * @return true only once when button is pressed
 	 */
 	public boolean onPress(Button x)
 	{
 		return (x.pressed[joystickNumber] && !x.oldValue[joystickNumber]);
 	}
 	
-	/*
-	 * true constantly while button is held
+	/**
+	 * 
+	 * @param x button to read
+	 * @return true constantly while button is held
 	 */
 	public boolean whileHeld(Button x) 
 	{
 		return x.pressed[joystickNumber];
 	}
 	
-	/*
-	 * true only once when button is released
+	/**
+	 * 
+	 * @param x button to check
+	 * @return true only once while button is released
 	 */
 	public boolean onRelease(Button x)
 	{
 		return (!x.pressed[joystickNumber] && x.oldValue[joystickNumber]);
 	}
 	
+	/**
+	 * Treats the triggers like a button, using 85% pressed as the boundary
+	 * @author Josh
+	 *
+	 */
 	public enum TriggerButton
 	{
 		rTrigger(0), lTrigger(1);
@@ -81,30 +101,42 @@ public class XBoxController extends Joystick{
 			this.value = value;
 		}
 	}
-	/*
-	 * true only once when TriggerButton is pressed
+	
+	/**
+	 * 
+	 * @param x trigger to check
+	 * @return true only once when TriggerButton is pressed
 	 */
 	public boolean onPress(TriggerButton x)
 	{
 		return (x.currVal[joystickNumber] > 0.85 && x.oldVal[joystickNumber] < 0.85);
 	}
-	
-	/*
-	 * true constantly while TriggerButton is held
+
+	/**
+	 * 
+	 * @param x button to check
+	 * @return true constantly while TriggerButton is held
 	 */
 	public boolean whileHeld(TriggerButton x) 
 	{
 		return x.currVal[joystickNumber] > 0.85;
 	}
-	
-	/*
-	 * true only once when TriggerButton is released
+
+	/**
+	 * 
+	 * @param x button to check
+	 * @return true only once when TriggerButton is released
 	 */
 	public boolean onRelease(TriggerButton x)
 	{
 		return (x.currVal[joystickNumber] < 0.85 && x.oldVal[joystickNumber] > 0.85);
 	}
 	
+	/**
+	 * POV enum to treat the POV like a button
+	 * @author Josh
+	 *
+	 */
 	public enum POV
 	{
 		POV(0);
@@ -117,22 +149,40 @@ public class XBoxController extends Joystick{
 		}
 	}
 	
+	/**
+	 * 
+	 * @param x POV to read
+	 * @param val which POV direction to read
+	 * @return true once when POV value is pressed
+	 */
 	public boolean onPressPOVVal(POV x, double val)
 	{
 		return (x.oldVal != val) && (x.currVal == val);
 	}
 	
+	/**
+	 * 
+	 * @param x POV to read
+	 * @param val which POV direction to read
+	 * @return true constantly while POV value is held
+	 */
 	public boolean whileHeldPOVVal(POV x, double val)
 	{
 		return (x.oldVal == x.currVal);
 	}
 	
+	/**
+	 * 
+	 * @param x POV to read
+	 * @param val which POV direction to read
+	 * @return true once when POV value is released
+	 */
 	public boolean onReleasePOVVal(POV x, double val)
 	{
 		return (x.oldVal == val) && (x.currVal != val);
 	}
-	
-	/*
+
+	/**
 	 * Call this once per robot loop
 	 * This will be able to differentiate pressed, held and released
 	 */

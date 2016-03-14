@@ -9,6 +9,14 @@ import edu.wpi.first.wpilibj.interfaces.*;
 import edu.wpi.first.wpilibj.smartdashboard.*;
 import java.io.*;
 
+/**
+ * Autonomous utility functions.<br>
+ * Piecing together these functions with different parameters allows for millions of different autonomous programs, if one is so inclined<br>
+ * Currently utilizes the drivetrain, the collector and shooter<br>
+ * Sensors used: Gyroscope, Camera
+ * @author Josh
+ *
+ */
 public class Autonomous {
 	Drivetrain drivetrain;
 	Gyro gyro;
@@ -16,7 +24,15 @@ public class Autonomous {
 	Timer timer;
 	ImageProcessor processor;
 	
-	
+	/**
+	 * Constructs parts of the robot as well as a timer
+	 * @param inDrivetrain drivetrain from main class
+	 * @param inGyro gyro from main class
+	 * @param inCollector collector talon
+	 * @param inRShooter right shooter talon
+	 * @param inLShooter left shooter talon
+	 * @param inProcessor image processor
+	 */
 	public Autonomous(Drivetrain inDrivetrain, Gyro inGyro, TwilightTalon inCollector, TwilightTalon inRShooter, TwilightTalon inLShooter, ImageProcessor inProcessor)
 	{
 		drivetrain = inDrivetrain;
@@ -28,22 +44,28 @@ public class Autonomous {
 		processor = inProcessor;
 	}
 	
+	/**
+	 * Reverses collector to remove ball, spins up shooter wheels and fires
+	 */
 	public void shoot()
 	{
 		double voltVal = 8.5;
-			collector.set(-1.0);
-			Timer.delay(0.05);
-			collector.set(0);
-			rightShooter.set(-voltVal);
-			leftShooter.set(voltVal);
-			Timer.delay(1.1);
-			collector.set(1.0);
-			Timer.delay(2.0);
-			rightShooter.set(0);
-			leftShooter.set(0);
-			collector.set(0);
+		collector.set(-1.0);
+		Timer.delay(0.05);
+		collector.set(0);
+		rightShooter.set(-voltVal);
+		leftShooter.set(voltVal);
+		Timer.delay(1.1);
+		collector.set(1.0);
+		Timer.delay(2.0);
+		rightShooter.set(0);
+		leftShooter.set(0);
+		collector.set(0);
 	}
 	
+	/**
+	 * Moves forward and backward to line up based on camera distance, eventually will use LIDAR
+	 */
 	public void forwardBackwardToShoot()
 	{
 		while(true)
@@ -69,6 +91,9 @@ public class Autonomous {
 		}
 	}
 	
+	/**
+	 * Uses RTL camera values to line up facing straight at the goal
+	 */
 	public void lineUpToShoot()
 	{
 		while(true)
@@ -103,6 +128,10 @@ public class Autonomous {
 		}
 	}
 	
+	/**
+	 * Lowers the frame to the ground
+	 * If called before goUp(), it will actually raise the frame
+	 */
 	public void goDown()
 	{
 		drivetrain.turnInwards();
@@ -110,6 +139,11 @@ public class Autonomous {
 		drivetrain.turnInwards();
 		Timer.delay(0.1);
 	}
+	
+	/**
+	 * Raises the frame from the ground
+	 * If called after goDown(), it will actually lower the frame
+	 */
 	public void goUp()
 	{
 		drivetrain.turnOutwards();
@@ -117,6 +151,13 @@ public class Autonomous {
 		drivetrain.turnOutwards();
 		Timer.delay(0.1);
 	}
+	
+	/**
+	 * Turns using the gyro
+	 * First takes a reading, turns a number of degrees to a point, then nudges the robot back if it overshoots
+	 * @param degrees Degrees to turn, positive to turn right, negative for left
+	 * @param motorPower Motor power for the inital turn, the second turn is motorPower - 0.1
+	 */
 	public void turnGyro(double degrees, double motorPower)
 	{
 		double desiredVal = gyro.getAngle() + degrees;
@@ -152,6 +193,11 @@ public class Autonomous {
 		drivetrain.setRightWheels(0);
 	}
 	
+	/**
+	 * Drives in a straight line, using the gyro to correct if it curves
+	 * @param seconds Time to drive
+	 * @param motorPower speed to drive at
+	 */
 	public void driveGyro(double seconds, double motorPower)
 	{
 		double startGyroVal = gyro.getAngle();

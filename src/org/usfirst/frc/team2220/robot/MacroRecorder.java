@@ -4,10 +4,10 @@ import java.io.FileWriter;
 import java.io.IOException;
 
 /**
- * 2016 Macro, based off of last years-> https://github.com/DennisMelamed/FRC-Play-Record-Macro
+ * 2016 Macro, based off of last years at https://github.com/DennisMelamed/FRC-Play-Record-Macro
  * Stores data from motors
  * TODO add more motors than just drivetrain
- * @author potatoe420
+ * @author Josh
  *
  */
 public class MacroRecorder {
@@ -20,6 +20,10 @@ public class MacroRecorder {
 		//only call this, makes sure we are reading/writing from the same file.
 		static final String autoFile = new String("/home/lvuser/recordedAuto" + autoNumber + ".csv");
 		
+		/**
+		 * Starts a timer and creates a file writer
+		 * @throws IOException if you try to write files wrong
+		 */
 		public MacroRecorder() throws IOException
 		{
 				//Start Time
@@ -30,6 +34,11 @@ public class MacroRecorder {
 		}
 		
 
+		/**
+		 * Records values and stores them to a file
+		 * @param drivetrain drivetrain to store the values from
+		 * @throws IOException if you try to write files wrong
+		 */
 		public void record(Drivetrain drivetrain) throws IOException
 		{
 			if(writer != null)
@@ -58,7 +67,10 @@ public class MacroRecorder {
 		}
 		
 		
-		//This stops stuff and puts it in the file
+		/**
+		 * Stops everything and puts it in a file
+		 * @throws IOException if you try to write files wrong
+		 */
 		public void end() throws IOException
 		{
 			if(writer !=null)

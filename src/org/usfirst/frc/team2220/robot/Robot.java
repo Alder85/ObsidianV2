@@ -15,9 +15,11 @@ import java.io.*;
 import java.util.ArrayList;
 
 /**
- * This is 2220's test code
+ * Main robot class.<br>
+ * Defines everything and puts it to use somewhat efficiently.
+ * @author Josh
+ *
  */
-//potatoe potatoe 
 public class Robot extends SampleRobot {
     SmartDashboard dashboard;
 
@@ -99,6 +101,9 @@ public class Robot extends SampleRobot {
     boolean LEDon = false;
     boolean cmd_sent = false;
 
+    /**
+     * Initializes everything with presets needed for both autonomous and teleop
+     */
 	public void robotInit()
 	{
 		serial = new SerialPort(RIODUINO_SERIAL_BAUD, RIODUINO_SERIAL_PORT);
@@ -171,8 +176,8 @@ public class Robot extends SampleRobot {
 	boolean autoShooting = false;
 	double shotLength = 1.375;
 	/**
-     * Autonomous 
-     * @TODO
+     * Using the autonomous object, runs a series of function on 
+     * the declared drivetrain to complete autonomous goals
      */
     public void autonomous() 
     {
@@ -199,8 +204,8 @@ public class Robot extends SampleRobot {
 
     }
 	/**
-     * TeleOp
-     * @TODO
+     * Using the previously declared robot objects, caries out the functions of our robot
+     * relative to driver commands, using automation when necessary
      */
     public void operatorControl() {
     	//don't declare stuff here
@@ -534,7 +539,9 @@ public class Robot extends SampleRobot {
         }
     }
     
-	
+	/**
+	 * Utility print statements
+	 */
     public void printEverything()
     {
     	SmartDashboard.putNumber("roboRio accelX", accel.getX());
@@ -610,6 +617,12 @@ public class Robot extends SampleRobot {
     	SmartDashboard.putNumber("maxFL", maxVal[3]);
     	
     }
+    /**
+     * Checks if a value is within a "dead zone"
+     * @param val value to check
+     * @param zone range to check
+     * @return the value if it is outside of the zone, 0 if it is within the deadZone
+     */
     public double deadZone(double val, double zone)
     {
     	if(val < zone && val > -zone)
@@ -628,10 +641,6 @@ public class Robot extends SampleRobot {
     	}
     }
 
-    /**
-     * Test mode
-     * @TODO diagnostics
-     */
     public void test() {
     	
     }

@@ -2,7 +2,13 @@ package org.usfirst.frc.team2220.robot;
 
 import edu.wpi.first.wpilibj.*;
 
-public class WheelRotation {	//Please put more descriptive descriptions in your class explanations
+/**
+ * Runs a wheel using a PID loop. Unused as we dropped wheel encoders for weight.<br>
+ * Other sensor are capable of correcting the robot due to the short autonomous.
+ * @author Josh
+ *
+ */
+public class WheelRotation {
 	private final double kP;
 	private TwilightTalon talon;
 	private Encoder encoder;
@@ -13,7 +19,13 @@ public class WheelRotation {	//Please put more descriptive descriptions in your 
 	private boolean reversed = false;
 	
 	/**
+	 * 
+	 */
+	/**
 	 * Wheel rotation, running two wheels from one motor
+	 * @param Talon talon to use
+	 * @param WheelEncoder encoder to use
+	 * @param KP porportional constant for tuning
 	 */
 	public WheelRotation(TwilightTalon Talon, Encoder WheelEncoder, double KP) { //Need the encoder class
 		kP = KP;
@@ -23,6 +35,7 @@ public class WheelRotation {	//Please put more descriptive descriptions in your 
 	
 	/**
 	 * Gets the RPS since the last call of getRPS()
+	 * @return the current rps
 	 */
 	public double getRPS() {
 		currPos = encoder.getDistance();
@@ -36,7 +49,9 @@ public class WheelRotation {	//Please put more descriptive descriptions in your 
 		return out;
 	}
 	
-
+	/**
+	 * @param newRPS the desired RPS
+	 */
 	public void setDesiredRPS(double newRPS) {
 		desiredRPS = newRPS;
 	}

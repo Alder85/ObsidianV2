@@ -3,6 +3,11 @@ package org.usfirst.frc.team2220.robot;
 import edu.wpi.first.wpilibj.*;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
+/**
+ * Simplifies collector to simple intake and outake methods
+ * @author Josh
+ * @deprecated This is an example of making an object where one really isn't needed because it is only used once
+ */
 public class Collector {
 	private TwilightTalon collectorTalon;
 	

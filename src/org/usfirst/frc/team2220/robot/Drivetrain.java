@@ -3,6 +3,11 @@ package org.usfirst.frc.team2220.robot;
 
 import edu.wpi.first.wpilibj.*;
 
+/**
+ * Runs the drivetrain, simplifies commands so one can control all four wheels and all four modules very simply
+ * @author Josh
+ *
+ */
 public class Drivetrain {
 	private ModuleRotation flM, frM, brM, blM;
 	private TwilightTalon  flW, frW, brW, blW;
@@ -16,13 +21,16 @@ public class Drivetrain {
     //               //
 	///////////////////
 	
+	/**
+	 * A constructor with 8 parameters would be really fun but I decided against it for now
+	 */
 	public Drivetrain()
 	{
 		
 	}
 	
 	/**
-	 * @deprecated
+	 * @deprecated We now assume wheels start on the ground and use that
 	 */
 	public void goToDefault()
 	{
@@ -32,7 +40,8 @@ public class Drivetrain {
 		blM.goToDefault();
 	}
 	/**
-	 * sets the right wheels
+	 * Sets the right wheels
+	 * @param pow Power to set the right wheels to, reversed because they are mounted mirror to the left wheels
 	 */
 	public void setRightWheels(double pow)
 	{
@@ -41,7 +50,8 @@ public class Drivetrain {
 	}
 	
 	/**
-	 * sets the left wheels
+	 * Sets the left wheels
+	 * @param pow power to set the left wheels to
 	 */
 	public void setLeftWheels(double pow)
 	{
@@ -72,30 +82,9 @@ public class Drivetrain {
 	}
 	
 	/**
-	 * switch for figuring out which module
-	 * maybe I want a module enum?
-	 */
-	public void incrementModule(int module, int turns)
-	{
-		switch(module)
-		{
-			case frontLeft:
-				flM.incrementQuarters(turns);
-				break;
-			case frontRight:
-				frM.incrementQuarters(turns);
-				break;
-			case backRight:
-				brM.incrementQuarters(turns);
-				break;
-			case backLeft:
-				blM.incrementQuarters(turns);
-				break;
-		}
-	}
-	
-	/**
 	 * Gets wheel power, for macro
+	 * @param wheel number of the wheel to get the power from
+	 * @return the power of the wheel
 	 */
 	public double getWheel(int wheel)
 	{
@@ -115,6 +104,8 @@ public class Drivetrain {
 	
 	/**
 	 * Sets individual wheel, for macro
+	 * @param wheel the wheel to set a power to
+	 * @param pow the power to set a wheel to
 	 */
 	public void setWheel(int wheel, double pow)
 	{
@@ -136,9 +127,11 @@ public class Drivetrain {
 	}
 	
 	/**
-	 * Gets module offset from start for macro
+	 * Gets module offset from start for macro.<br>
 	 * This allows modules to start in drastically different positions from when the macro is recorded,
 	 * but still work by only using the distance from start rather than the actual position
+	 * @param module module to get the distance from
+	 * @return the distance the module has moved from start
 	 */
 	public double getModuleDistanceFromStart(int module)
 	{
@@ -157,8 +150,9 @@ public class Drivetrain {
 	}
 	
 	/**
-	 * Sets the module to a distance relative to what was recorded
-	 * for the macro
+	 * Sets the module to a distance relative to what was recorded for the macro
+	 * @param module module to set the distance on
+	 * @param distance distance to go
 	 */
 	public void setModuleDistanceFromStart(int module, double distance)
 	{
@@ -179,11 +173,9 @@ public class Drivetrain {
 		}
 	}
 	
-
-
-	
 	/**
-	 * negative numbers for backwards
+	 * Increments all modules, negative numbers for backwards
+	 * @param turns turns to go
 	 */
 	public void incrementAllModules(int turns)
 	{
@@ -196,7 +188,10 @@ public class Drivetrain {
 	
 	/**
 	 * sets up all the modules
-	 * works
+	 * @param fl front left module
+	 * @param fr front right module
+	 * @param br back right module
+	 * @param bl back left module
 	 */
 	public void setModules(ModuleRotation fl, ModuleRotation fr, ModuleRotation br, ModuleRotation bl)
 	{
@@ -208,8 +203,10 @@ public class Drivetrain {
 	
 	/**
 	 * sets up all the wheels
-	 * 
-	 * CHANGE this to wheelrotation once that class works correctly
+	 * @param fl front left wheel
+	 * @param fr front right wheel
+	 * @param br back right wheel
+	 * @param bl back left wheel
 	 */
 	public void setWheels(TwilightTalon fl, TwilightTalon fr,TwilightTalon br, TwilightTalon bl)
 	{

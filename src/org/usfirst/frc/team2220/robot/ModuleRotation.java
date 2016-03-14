@@ -3,6 +3,11 @@ package org.usfirst.frc.team2220.robot;
 import edu.wpi.first.wpilibj.CANTalon.FeedbackDevice;
 import edu.wpi.first.wpilibj.CANTalon.TalonControlMode;
 
+/**
+ * Rotation for modules using abosulte encoders plugged into CANTalons
+ * @author Josh
+ *
+ */
 public class ModuleRotation {
 	private TwilightTalon talon;
 	double offsetTarget = 0.0, target, startPos;
@@ -11,80 +16,48 @@ public class ModuleRotation {
 	boolean isRightWheel = false;
 	
 	/**
-	 * Constructor will, in the future, take more parameters
+	 * Sets the inital position to the current position, assumes the modules start on the ground
+	 * @param Talon talon to use
 	 */
 	public ModuleRotation(TwilightTalon Talon) {
 		talon = Talon;
-		//talon.setEncPosition(talon.getPulseWidthPosition()); //initialize to absolute
 		talon.setFeedbackDevice(FeedbackDevice.PulseWidth);
 		talon.changeControlMode(TalonControlMode.Position);
 		
-		//target = offsetTarget + getDesiredPosition();
 		target = getDoublePosition();
 		startPos = target;
 		this.reverseSensor(false);
 		
 		talon.setProfile(0); //we aren't using multiple profiles yet
 		
-		
-		//this.setP(0.15); //previously 0.15
 		this.setI(0.001);
 		talon.setAllowableClosedLoopErr(allowableError);	//how much error is allowable
-		
-		
-		//talon.set(defaultTarget);
 	}
 	
+	/**
+	 * Resets modules to current position if they reset
+	 */
 	public void resetTarget()
 	{
 		target = getDoublePosition();
 	}
 	
 	/**
-	 * Gets relative distance from start, so modules can start differently from when macro was recorded
-	 * 
-	 * For the macro
+	 * Gets relative distance from start, so modules can start differently from when macro was recorded, for the macro
+	 * @return the distance from the starting position
 	 */
 	public double distanceFromStart()
 	{
 		return target - startPos;
 	}
 	
-	/*
-	 * this is me thinking, ignore
-	 * TODO remove my thinking
-	 * START AT 2.0
-	 * TARGET 2.5
-	 * distanceFromStart = 0.5
-	 * 
-	 * START AT 3.0
-	 * TARGET SHOULD BE 3.5
-	 * talon.set startPos + in
-	 */
 	/**
-	 * Recieves a value previously taken from distanceFromStart(), then adds in to the startPos
-	 * For the Macro
+	 * Receives a value previously taken from distanceFromStart(), then adds in to the startPos. for the Macro
+	 * @param in the distance from start to go to
 	 */
 	public void setDistanceFromStart(double in)
 	{
 		talon.set(startPos + in);
-	}
-	
-	/**
-	 * WIP
-	 * If this doesn't work, I will need to make my own "follower" mode
-	 */
-	void setFollower(int deviceID)
-	{
-		talon.changeControlMode(TalonControlMode.Follower);
-		talon.set(deviceID);
-	}
-	/**
-	 * Used for follower mode, WIP
-	 */
-	int getDeviceID()
-	{
-		return talon.getDeviceID();
 	}
 	
 	/**
@@ -93,15 +66,17 @@ public class ModuleRotation {
 	 * properly, especially with the variable startup position the Mechanical team requested.
 	 * This will reverse some commands that go to the rightWheel, relative to quarterTurns
 	 * I may or may not have to use this for the macro as well.
+	 * @param in whether of not this wheel is a right wheel
 	 */
 	void setRightWheel(boolean in)
 	{
 		isRightWheel = in;
 	}
 	/**
-	 * increments the motor position by an eighth-turn. inputting 2 gives a quarter turn, etc.
+	 * increments the motor position by an eighth-turn. inputting 2 gives a quarter turn, etc.<br>
 	 * Technically we refer to an 8th full turn as a quarter turn, as only 1/2 full is relevant 
-	 * because the modules are symetrical
+	 * because the modules are symmetrical
+	 * @param quarters the amount of quarter turns to go
 	 */
 	void incrementQuarters(int quarters) {		
 		//target = talon.get() + (quarters * 0.125);
@@ -146,6 +121,7 @@ public class ModuleRotation {
 	 * Returns absolute position 0 to 4095, does not loop, so technically (-infinity, infinity)
 	 * uncomment constant to convert to degrees
 	 * uncomment 0xFFF to loop so you only get 0 to 4095
+	 * @return the current position
 	 */
 	double getPosition() 
 	{		
@@ -156,6 +132,7 @@ public class ModuleRotation {
 	
 	/**
 	 * Scales 0 to 4095 to 0 to 1
+	 * @return the current position as a double
 	 */
 	double getDoublePosition() 
 	{
@@ -164,6 +141,7 @@ public class ModuleRotation {
 	
 	/**
 	 * Gets distance from last full turn
+	 * @return the current position relative to the last full turn
 	 */
 	double getModuloPosition() 
 	{
@@ -172,7 +150,7 @@ public class ModuleRotation {
 	
 	/**
 	 * Figures out which was to turn to be flat
-	 * Not really used right now
+	 * @return how far you must turn to make the modules be flat
 	 */
 	double getDesiredPosition()
 	{
@@ -187,7 +165,7 @@ public class ModuleRotation {
 	}
 	
 	/**
-	 * 
+	 * Integer position, as a double
 	 * @return the integer position, in full turns
 	 */
 	double getIntegerPosition() {
@@ -230,6 +208,7 @@ public class ModuleRotation {
 	
 	/**
 	 * Reverses the sensor
+	 * @param reversed whether or not the sensor is reversed
 	 */
 	void reverseSensor(boolean reversed)
 	{
@@ -239,6 +218,7 @@ public class ModuleRotation {
 	
 	/**
 	 * reverses the talon
+	 * @param reversed which way to reversed it
 	 */
 	void reverseTalon(boolean reversed)
 	{

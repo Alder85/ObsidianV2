@@ -1,6 +1,12 @@
 package org.usfirst.frc.team2220.robot;
 import edu.wpi.first.wpilibj.*;
 
+/**
+ * Extension of TwilightTalon, primarily for check if current limits have been surpassed,
+ * and if they have, disabling the motor
+ * @author Josh
+ *
+ */
 public class TwilightTalon extends CANTalon{
 	private double maxTemp;
 	private double maxCurrent;
@@ -8,7 +14,7 @@ public class TwilightTalon extends CANTalon{
 	private boolean tripped = false;
 	private Timer timer = new Timer();
 	private Timer resetTimer = new Timer();
-	private double tripTime = 0.25;
+	private double tripTime = 0.25; //change this is all motors are trippin
 	
 	/**
 	 * Cast of CANTalon class
@@ -21,14 +27,23 @@ public class TwilightTalon extends CANTalon{
 		maxTemp = 500.0;	//We don't use this
 	}
 	
+	/**
+	 * @param newCurrent maximum allowable current
+	 */
 	public void setMaxCurrent(double newCurrent) {
 		maxCurrent = newCurrent;
 	}
 	
+	/**
+	 * @param newTemp maximum allowable temperature
+	 */
 	public void setMaxTemp(double newTemp) {
 		maxTemp = newTemp;
 	}
 	
+	/**
+	 * Does not allow you to set new points if the talon is disabled
+	 */
 	@Override
 	public void set(double setpoint)
 	{
@@ -38,6 +53,9 @@ public class TwilightTalon extends CANTalon{
 		}
 	}
 	
+	/**
+	 * Keeps track of when the talon is disabled
+	 */
 	@Override
 	public void disable()
 	{
@@ -45,6 +63,9 @@ public class TwilightTalon extends CANTalon{
 		disabled = true;
 	}
 	
+	/**
+	 * keeps track of when the talon is enabled
+	 */
 	@Override
 	public void enable()
 	{
@@ -52,12 +73,16 @@ public class TwilightTalon extends CANTalon{
 		disabled = false;
 	}
 	
+	/**
+	 * @return whether or not the talon is disabled
+	 */
 	public boolean isDisabled()
 	{
 		return disabled;
 	}
 	/**
-	 * Tests whether Talon is within 'safe' levels
+	 * Tests whether Talon is within 'safe' levels<br>
+	 * if unsafe levels are surpassed for a time exceeding the tripTime variable, the motor is disabled
 	 * @return Whether the test was passed
 	 */
 	public boolean test() {
@@ -73,7 +98,7 @@ public class TwilightTalon extends CANTalon{
 				tripped = true;
 			}
 			
-			if(timer.get() > tripTime) //CHANGE THIS
+			if(timer.get() > tripTime) 
 			{
 				timer.stop();
 				timer.reset();
@@ -91,17 +116,25 @@ public class TwilightTalon extends CANTalon{
 		return test;
 	}
 	
+	/**
+	 * @return current is surpassing maximum
+	 */
 	public boolean isOverMaxCurrent() {
-		double CurrCurrent = this.getOutputCurrent(); //Returns Amperes
+		double CurrCurrent = this.getOutputCurrent();
 		return CurrCurrent > maxCurrent;
 	}
 	
+	/**
+	 * @return temperature is surpassing maximum
+	 */
 	public boolean isOverMaxTemp() {
-		double CurrTemp = this.getTemperature(); //Returns Celsius
+		double CurrTemp = this.getTemperature();
 		return CurrTemp > maxTemp;
 	}
 	
-	//TODO test
+	/**
+	 * Stops the motor
+	 */
 	public void stop() {
 		this.disableControl();
 	}
@@ -120,6 +153,7 @@ public class TwilightTalon extends CANTalon{
 	
 	/**
 	 * String output for printing to the SmartDashboard OR Console
+	 * @return String containing the talon's current condition
 	 */
 	public String toString() {
 		double CurrTemp = this.getTemperature(); //Returns Celsius
