@@ -129,6 +129,11 @@ public class Robot extends SampleRobot {
     	brWheel.setMaxCurrent(100);
     	blWheel.setMaxCurrent(100);
     	
+    	talon2.setMaxCurrent(60);
+    	talon4.setMaxCurrent(60);
+    	talon5.setMaxCurrent(60);
+    	talon7.setMaxCurrent(60);
+    	
     	collector.setMaxCurrent(60);
     	rightShooter.setMaxCurrent(70);
     	leftShooter.setMaxCurrent(70);
@@ -232,6 +237,7 @@ public class Robot extends SampleRobot {
     	ArrayList<Integer> lidarValues = new ArrayList();
     	int lidarSum = 0;
     	int newVal = 0;
+    	double lidarAverage = -42;
         while (isOperatorControl() && isEnabled()) {
 			/////////////////////////
 			//         LIDAR       //
@@ -259,8 +265,10 @@ public class Robot extends SampleRobot {
             lidarSum = 0;
             for(int i = 0;i < lidarValues.size();i++)
             	lidarSum += lidarValues.get(i);
+            if(lidarValues.size() != 0)
+            	lidarAverage = lidarSum / lidarValues.size();
             SmartDashboard.putNumber("rawLidar", newVal);
-            SmartDashboard.putNumber("lidar", lidarSum / lidarValues.size());
+            SmartDashboard.putNumber("lidar", lidarAverage);
 			/////////////////////////
 			//  Primary Controller //
 			/////////////////////////
@@ -335,7 +343,7 @@ public class Robot extends SampleRobot {
 			/////////////////////////
 			//    Shooter Wheels   //
 			/////////////////////////
-			shooterVoltage = (12.2204) * Math.pow((.99989), (lidarSum / lidarValues.size()));
+			shooterVoltage = (12.2204) * Math.pow((.99989), (lidarAverage));
 			if(shooterVoltage < 8.9)
 				shooterVoltage = 8.9;
 			
