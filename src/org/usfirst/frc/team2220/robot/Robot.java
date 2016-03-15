@@ -90,31 +90,15 @@ public class Robot extends SampleRobot {
 	double allTuning;
 	ImageProcessor processor;
 	Autonomous autonomous;
-	SerialPort serial;
-    private static final int RIODUINO_SERIAL_BAUD = 9600;
-    private static final SerialPort.Port RIODUINO_SERIAL_PORT = SerialPort.Port.kMXP;
-    private static final SerialPort.WriteBufferMode RIODUINO_SERIAL_WRITE_BUFFER_MODE = SerialPort.WriteBufferMode.kFlushOnAccess;
-    private static final double RIODUINO_SERIAL_TIMEOUT = 1;
-    private static final SerialPort.FlowControl RIODUINO_SERIAL_FLOW_CONTROL = SerialPort.FlowControl.kNone;
-    int nbytes;
-    byte[] buffer = new byte[8];
-    boolean LEDon = false;
-    boolean cmd_sent = false;
+	SerialCom serial;
 
     /**
      * Initializes everything with presets needed for both autonomous and teleop
      */
 	public void robotInit()
 	{
-		serial = new SerialPort(RIODUINO_SERIAL_BAUD, RIODUINO_SERIAL_PORT);
-		serial.reset();
-        serial.setWriteBufferMode(RIODUINO_SERIAL_WRITE_BUFFER_MODE);
-        serial.setReadBufferSize(1);
-        serial.setWriteBufferSize(1);
-        serial.setTimeout(RIODUINO_SERIAL_TIMEOUT);
-        serial.setFlowControl(RIODUINO_SERIAL_FLOW_CONTROL);
-        serial.disableTermination();
-
+		serial = new SerialCom();
+		
 		frame = NIVision.imaqCreateImage(ImageType.IMAGE_RGB, 0);
 		session0 = NIVision.IMAQdxOpenCamera("cam0", NIVision.IMAQdxCameraControlMode.CameraControlModeController);
 		session1 = NIVision.IMAQdxOpenCamera("cam1", NIVision.IMAQdxCameraControlMode.CameraControlModeController);
@@ -164,7 +148,7 @@ public class Robot extends SampleRobot {
     	leftShooter.changeControlMode(TalonControlMode.Voltage);
     	leftShooter.reverseOutput(true);
     	
-    	autonomous = new Autonomous(drivetrain, gyro, collector, leftShooter, rightShooter, processor);
+    	autonomous = new Autonomous(drivetrain, gyro, collector, leftShooter, rightShooter, processor, serial, collectorExtender);
     	allTuning = 1.5;
     	
     	frModule.setP(allTuning);
@@ -177,7 +161,7 @@ public class Robot extends SampleRobot {
     }
 	
 	
-	Accelerometer accel = new BuiltInAccelerometer();
+	//Accelerometer accel = new BuiltInAccelerometer();
 	boolean autoShooting = false;
 	double shotLength = 1.375;
 	/**
@@ -186,26 +170,46 @@ public class Robot extends SampleRobot {
      */
     public void autonomous() 
     {
-    	frWheel.enableBrakeMode(true);
-    	flWheel.enableBrakeMode(true);
-    	brWheel.enableBrakeMode(true);
-    	blWheel.enableBrakeMode(true);
-    	//lowbar
-    	/*
-    	//autonomous.driveGyro(3.1, 0.6); //this goes under low bar from start position
-    	//autonomous.turnGyro(55, 0.6); //turn
-    	autonomous.lineUpToShoot();
-    	autonomous.forwardBackwardToShoot();
-    	autonomous.lineUpToShoot();
-    	autonomous.shoot();
-    	*/
-    	//end lowbar
-    	//autonomous.driveGyro(0.5, 0.5);
-    	autonomous.goUp();
-    	autonomous.driveGyro(1.0, 1.0);
-    	//Timer.delay(3);
-    	
-    	//autonomous.goDown();
+    	if(isEnabled() && isAutonomous())
+    	{
+	    	frWheel.enableBrakeMode(true);
+	    	flWheel.enableBrakeMode(true);
+	    	brWheel.enableBrakeMode(true);
+	    	blWheel.enableBrakeMode(true);
+	    	//lowbar
+	    	
+	    	//autonomous.shoot();
+	    	//autonomous.lineUpToShoot();
+	    	//autonomous.readSerial();
+	    	//autonomous.shoot();
+	    	
+	    	autonomous.extendCollector(0.6);
+	    	
+	    	autonomous.driveGyro(2.7, 0.6); //this goes under low bar from start position
+	    	autonomous.pointTurnGyro(55, 0.6);
+	    	autonomous.lineUpToShoot();
+	    	autonomous.readSerial();
+	    	autonomous.shoot();
+	    	
+	    	
+	    	
+	    	//autonomous.turnGyro(55, 0.6); //turn
+	    	/*
+	    	//autonomous.driveGyro(3.1, 0.6); //this goes under low bar from start position
+	    	//autonomous.turnGyro(55, 0.6); //turn
+	    	autonomous.lineUpToShoot();
+	    	autonomous.forwardBackwardToShoot();
+	    	autonomous.lineUpToShoot();
+	    	autonomous.shoot();
+	    	*/
+	    	//end lowbar
+	    	//autonomous.driveGyro(0.5, 0.5);
+	    	//autonomous.goUp();
+	    	//autonomous.driveGyro(1.0, 1.0);
+	    	//Timer.delay(3);
+	    	
+	    	//autonomous.goDown();
+    	}
 
     }
 	/**
@@ -234,10 +238,7 @@ public class Robot extends SampleRobot {
     	double tempTune;
     	int dashCount = 0;
     	double shooterVoltage = 10;
-    	ArrayList<Integer> lidarValues = new ArrayList();
-    	int lidarSum = 0;
-    	int newVal = 0;
-    	double lidarAverage = -42;
+    	
         while (isOperatorControl() && isEnabled()) {
 			/////////////////////////
 			//         LIDAR       //
@@ -246,29 +247,12 @@ public class Robot extends SampleRobot {
             //System.out.println("Checkpoint S2");
         	//10111010
         	//
-        	nbytes = serial.getBytesReceived();
-            if (nbytes > 0) 
-            {
-                buffer = serial.read(nbytes);
-                newVal = ((buffer[0] & 0xFF) << 8 | (buffer[1] & 0xFF));
-                if(lidarValues.size() > 5)
-                {
-                	if(newVal < lidarSum + 1000)
-                		lidarValues.add(newVal);
-                		
-                }
-                else
-                	lidarValues.add(newVal);
-            }
-            if(lidarValues.size() > 10)
-            	lidarValues.remove(0);
-            lidarSum = 0;
-            for(int i = 0;i < lidarValues.size();i++)
-            	lidarSum += lidarValues.get(i);
-            if(lidarValues.size() != 0)
-            	lidarAverage = lidarSum / lidarValues.size();
-            SmartDashboard.putNumber("rawLidar", newVal);
-            SmartDashboard.putNumber("lidar", lidarAverage);
+        	serial.update();
+        	
+           
+            SmartDashboard.putNumber("rawLidar", serial.getLidarValue());
+            SmartDashboard.putNumber("lidar", serial.getAverageLidarValue());
+            System.out.println("" + serial.getAverageLidarValue() + " " + serial.getLidarValue() +  " " + shooterVoltage);
 			/////////////////////////
 			//  Primary Controller //
 			/////////////////////////
@@ -343,7 +327,7 @@ public class Robot extends SampleRobot {
 			/////////////////////////
 			//    Shooter Wheels   //
 			/////////////////////////
-			shooterVoltage = (12.2204) * Math.pow((.99989), (lidarAverage));
+			shooterVoltage = (12.2204) * Math.pow((.99989), (serial.getAverageLidarValue()));
 			if(shooterVoltage < 8.9)
 				shooterVoltage = 8.9;
 			
@@ -552,9 +536,6 @@ public class Robot extends SampleRobot {
 	 */
     public void printEverything()
     {
-    	SmartDashboard.putNumber("roboRio accelX", accel.getX());
-        SmartDashboard.putNumber("roboRio accelY", accel.getY());
-        SmartDashboard.putNumber("roboRio accelZ", accel.getZ());
     	SmartDashboard.putNumber("gyro", gyro.getAngle());
     	
     	SmartDashboard.putBoolean("frontCollector", !frontCollector.get());

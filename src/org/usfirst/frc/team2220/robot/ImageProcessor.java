@@ -29,11 +29,17 @@ public class ImageProcessor {
 	int imaqError;
 
 	// Constants
-	NIVision.Range TOTE_HUE_RANGE = new NIVision.Range(90, 135); // bright
-																	// green/white
+	/*
+	NIVision.Range TOTE_HUE_RANGE = new NIVision.Range(90, 135); // brightgreen/white
 	NIVision.Range TOTE_SAT_RANGE = new NIVision.Range(80, 255);
-	NIVision.Range TOTE_VAL_RANGE = new NIVision.Range(0, 255);
-	double AREA_MINIMUM = 0.50; // Default Area minimum for particle as a
+	NIVision.Range TOTE_VAL_RANGE = new NIVision.Range(0, 220); //0, 255
+	*/
+	
+	NIVision.Range TOTE_HUE_RANGE = new NIVision.Range(72, 135); // brightgreen/white
+	NIVision.Range TOTE_SAT_RANGE = new NIVision.Range(60, 196);
+	NIVision.Range TOTE_VAL_RANGE = new NIVision.Range(52, 231);
+	
+	double AREA_MINIMUM = 0.25; // Default Area minimum for particle as a
 								// percentage of total image area
 	double AREA_MAXIMUM = 10.00; // default max
 	double SCORE_MIN = 75.0; // TODO remove this trash

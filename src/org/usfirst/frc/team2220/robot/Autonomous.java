@@ -20,9 +20,10 @@ import java.io.*;
 public class Autonomous {
 	Drivetrain drivetrain;
 	Gyro gyro;
-	TwilightTalon collector, rightShooter, leftShooter;
+	TwilightTalon collector, rightShooter, leftShooter, collectorExtender;
 	Timer timer;
 	ImageProcessor processor;
+	SerialCom serial;
 	
 	/**
 	 * Constructs parts of the robot as well as a timer
@@ -33,7 +34,7 @@ public class Autonomous {
 	 * @param inLShooter left shooter talon
 	 * @param inProcessor image processor
 	 */
-	public Autonomous(Drivetrain inDrivetrain, Gyro inGyro, TwilightTalon inCollector, TwilightTalon inRShooter, TwilightTalon inLShooter, ImageProcessor inProcessor)
+	public Autonomous(Drivetrain inDrivetrain, Gyro inGyro, TwilightTalon inCollector, TwilightTalon inRShooter, TwilightTalon inLShooter, ImageProcessor inProcessor, SerialCom inSerial, TwilightTalon inExtender)
 	{
 		drivetrain = inDrivetrain;
 		gyro = inGyro;
@@ -42,6 +43,21 @@ public class Autonomous {
 		rightShooter = inRShooter;
 		leftShooter = inLShooter;
 		processor = inProcessor;
+		serial = inSerial;
+		collectorExtender = inExtender;
+	}
+	
+	public void extendCollector(double timeVal)
+	{
+		collectorExtender.set(1.0);
+		Timer.delay(timeVal);
+		collectorExtender.set(0);
+	}
+	
+	public void readSerial()
+	{
+		for(int i = 0;i < 10;i++)
+			serial.update();
 	}
 	
 	/**
@@ -49,13 +65,14 @@ public class Autonomous {
 	 */
 	public void shoot()
 	{
-		double voltVal = 8.5;
+		double voltVal = (12.2204) * Math.pow((.99989), (serial.getAverageLidarValue()));
+		voltVal = 8.8;
 		collector.set(-1.0);
-		Timer.delay(0.05);
+		Timer.delay(0.15); //previously 0.05
 		collector.set(0);
 		rightShooter.set(-voltVal);
 		leftShooter.set(voltVal);
-		Timer.delay(1.1);
+		Timer.delay(1.375);
 		collector.set(1.0);
 		Timer.delay(2.0);
 		rightShooter.set(0);
@@ -63,39 +80,15 @@ public class Autonomous {
 		collector.set(0);
 	}
 	
-	/**
-	 * Moves forward and backward to line up based on camera distance, eventually will use LIDAR
-	 */
-	public void forwardBackwardToShoot()
-	{
-		while(true)
-		{
-			Timer.delay(0.1);
-			processor.lookForTarget();
-			if(processor.getHeightDistance() > 170) //higher = closer
-			{
-				drivetrain.setLeftWheels(-0.5);
-				drivetrain.setRightWheels(-0.5);
-				Timer.delay(0.1);
-			}
-			else if(processor.getHeightDistance() < 160) //lower = farther
-			{
-				drivetrain.setLeftWheels(0.5);
-				drivetrain.setRightWheels(0.5);
-				Timer.delay(0.1);
-			}
-			else
-				break;
-			drivetrain.setLeftWheels(0);
-			drivetrain.setRightWheels(0);
-		}
-	}
+	
 	
 	/**
 	 * Uses RTL camera values to line up facing straight at the goal
 	 */
 	public void lineUpToShoot()
 	{
+		Timer tempTime = new Timer();
+		tempTime.start();
 		while(true)
 		{
 			Timer.delay(0.1); //allows robot to settle
@@ -110,7 +103,7 @@ public class Autonomous {
 			{
 				//look again
 			}
-			else if(temp > 25 || temp < -10)
+			else if(temp > 15 || temp < -15)
 			{
 				double temp2 = temp / 80;
 				if(temp2 > 0.5)
@@ -124,6 +117,8 @@ public class Autonomous {
 				drivetrain.setRightWheels(0);
 			}
 			else
+				break;
+			if(tempTime.get() > 10)
 				break;
 		}
 	}
@@ -193,6 +188,41 @@ public class Autonomous {
 		drivetrain.setRightWheels(0);
 	}
 	
+	public void pointTurnGyro(double degrees, double motorPower)
+	{
+		double desiredVal = gyro.getAngle() + degrees;
+		double tolerance = 3;
+		double correctVal = 0.1;
+		if(degrees > 0)
+		{
+			while(gyro.getAngle() < desiredVal)
+			{
+					drivetrain.setRightWheels(motorPower);
+					drivetrain.setLeftWheels(0);
+			}		
+			while(gyro.getAngle() > desiredVal)
+			{
+				drivetrain.setRightWheels(-motorPower + correctVal);
+				drivetrain.setLeftWheels(motorPower - correctVal);
+			}
+		}
+		else if(degrees < 0)
+		{
+			while(gyro.getAngle() > desiredVal)
+			{
+				drivetrain.setRightWheels(0);
+				drivetrain.setLeftWheels(motorPower);
+			}
+			while(gyro.getAngle() < desiredVal)
+			{
+				drivetrain.setRightWheels(motorPower - correctVal);
+				drivetrain.setLeftWheels(-motorPower + correctVal);
+			}
+		}
+		drivetrain.setLeftWheels(0);
+		drivetrain.setRightWheels(0);
+	}
+	
 	/**
 	 * Drives in a straight line, using the gyro to correct if it curves
 	 * @param seconds Time to drive
@@ -221,11 +251,11 @@ public class Autonomous {
 			if(tempGyro > startGyroVal + leeway)	
 			{
 				drivetrain.setLeftWheels(motorPower);
-				drivetrain.setRightWheels(0);//motorPower - changeVal);
+				drivetrain.setRightWheels(-0.2);//motorPower - changeVal);
 			}
 			else if(tempGyro < startGyroVal - leeway)
 			{
-				drivetrain.setLeftWheels(0);//motorPower - changeVal);
+				drivetrain.setLeftWheels(-0.2);//motorPower - changeVal);
 				drivetrain.setRightWheels(motorPower);
 			}
 			else
@@ -237,6 +267,35 @@ public class Autonomous {
 		drivetrain.setLeftWheels(0);
 		drivetrain.setRightWheels(0);
 	}
+	/**
+	 * Moves forward and backward to line up based on camera distance, eventually will use LIDAR
+	 * @deprecated use lidar instead
+	 */
+	public void forwardBackwardToShoot()
+	{
+		while(true)
+		{
+			Timer.delay(0.1);
+			processor.lookForTarget();
+			if(processor.getHeightDistance() > 170) //higher = closer
+			{
+				drivetrain.setLeftWheels(-0.5);
+				drivetrain.setRightWheels(-0.5);
+				Timer.delay(0.1);
+			}
+			else if(processor.getHeightDistance() < 160) //lower = farther
+			{
+				drivetrain.setLeftWheels(0.5);
+				drivetrain.setRightWheels(0.5);
+				Timer.delay(0.1);
+			}
+			else
+				break;
+			drivetrain.setLeftWheels(0);
+			drivetrain.setRightWheels(0);
+		}
+	}
+	
 }
 
 
