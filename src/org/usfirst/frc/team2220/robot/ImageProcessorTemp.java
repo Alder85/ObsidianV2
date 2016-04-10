@@ -3,6 +3,10 @@ package org.usfirst.frc.team2220.robot;
 import java.util.Comparator;
 import java.util.Vector;
 
+
+//import org.usfirst.frc.team2220.robot.Robot.ParticleReport;
+//import org.usfirst.frc.team2220.robot.Robot.Scores;
+
 //import org.usfirst.frc.team2220.robot.Robot.ParticleReport; wut
 //import org.usfirst.frc.team2220.robot.Robot.Scores;
 
@@ -16,57 +20,62 @@ import edu.wpi.first.wpilibj.CameraServer;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj.vision.AxisCamera;
+import edu.wpi.first.wpilibj.vision.AxisCamera.ExposureControl;
+import edu.wpi.first.wpilibj.vision.AxisCamera.WhiteBalance;
 
 /**
  * Highly modified version of 2015 Vision Sample Program<br>
  * Currently boxes targets on an image, circles the brightest one, then gives
  * statistics about location of the brightest target
  */
-public class ImageProcessor {
+public class ImageProcessorTemp {
 
-	// Images
-	Image frame;
-	Image binaryFrame;
-	int imaqError;
+	//A structure to hold measurements of a particle
+			public class ParticleReport implements Comparator<ParticleReport>, Comparable<ParticleReport>{
+				double PercentAreaToImageArea;
+				double Area;
+				double BoundingRectLeft;
+				double BoundingRectTop;
+				double BoundingRectRight;
+				double BoundingRectBottom;
+				
+				public int compareTo(ParticleReport r)
+				{
+					return (int)(r.Area - this.Area);
+				}
+				
+				public int compare(ParticleReport r1, ParticleReport r2)
+				{
+					return (int)(r1.Area - r2.Area);
+				}
+			};
 
-	// Constants
-	/*
-	NIVision.Range TOTE_HUE_RANGE = new NIVision.Range(90, 135); // brightgreen/white
-	NIVision.Range TOTE_SAT_RANGE = new NIVision.Range(80, 255);
-	NIVision.Range TOTE_VAL_RANGE = new NIVision.Range(0, 220); //0, 255
-	*/
-	
-	/*
-	NIVision.Range TOTE_HUE_RANGE = new NIVision.Range(26, 135); // brightgreen/white
-	NIVision.Range TOTE_SAT_RANGE = new NIVision.Range(60, 196);
-	NIVision.Range TOTE_VAL_RANGE = new NIVision.Range(52, 231);
-	*/
-	NIVision.Range NEW_HUE_RANGE = new NIVision.Range(50, 255);	//Default hue range for yellow tote
-	NIVision.Range NEW_SAT_RANGE = new NIVision.Range(50, 255);	//Default saturation range for yellow tote
-	NIVision.Range NEW_VAL_RANGE = new NIVision.Range(50, 255);	//Default value range for yellow tote
-	
-	
-	// use this maybe
-	/*
-	NIVision.Range TOTE_HUE_RANGE = new NIVision.Range(113, 124); // brightgreen/white
-	NIVision.Range TOTE_SAT_RANGE = new NIVision.Range(0, 255);
-	NIVision.Range TOTE_VAL_RANGE = new NIVision.Range(240, 255);
-	//*/
-	/*
-	NIVision.Range TOTE_HUE_RANGE = new NIVision.Range(0, 255); // brightgreen/white
-	NIVision.Range TOTE_SAT_RANGE = new NIVision.Range(0, 255);
-	NIVision.Range TOTE_VAL_RANGE = new NIVision.Range(0, 255);
-	*/
-	double AREA_MINIMUM = 0.25; // Default Area minimum for particle as a
-								// percentage of total image area
-	double AREA_MAXIMUM = 10.00; // default max
-	double SCORE_MIN = 75.0; // TODO remove this trash
-	double VIEW_ANGLE = 60; // View angle for camera, set to Axis m1011 by
-							// default, 64 for m1013, 51.7 for 206, 52 for
-							// HD3000 square, 60 for HD3000 640x480
-	NIVision.ParticleFilterCriteria2 criteria[] = new NIVision.ParticleFilterCriteria2[1];
-	NIVision.ParticleFilterOptions2 filterOptions = new NIVision.ParticleFilterOptions2(0, 0, 1, 1);
-	Scores scores = new Scores();
+			//Structure to represent the scores for the various tests used for target identification
+			public class Scores {
+				double Area;
+				double Aspect;
+			};
+			
+	//Images
+			Image frame;
+			Image binaryFrame;
+			int imaqError;
+			AxisCamera camera;
+
+			//Constants
+			NIVision.Range TOTE_HUE_RANGE = new NIVision.Range(50, 255);	//Default hue range for yellow tote
+			NIVision.Range TOTE_SAT_RANGE = new NIVision.Range(50, 255);	//Default saturation range for yellow tote
+			NIVision.Range TOTE_VAL_RANGE = new NIVision.Range(50, 255);	//Default value range for yellow tote
+			double AREA_MINIMUM = 0.1; //Default Area minimum for particle as a percentage of total image area
+			double AREA_MAXIMUM = 100.0;
+			double LONG_RATIO = 2.22; //Tote long side = 26.9 / Tote height = 12.1 = 2.22
+			double SHORT_RATIO = 1.4; //Tote short side = 16.9 / Tote height = 12.1 = 1.4
+			double SCORE_MIN = 75.0;  //Minimum score to be considered a tote
+			double VIEW_ANGLE = 49.4; //View angle fo camera, set to Axis m1011 by default, 64 for m1013, 51.7 for 206, 52 for HD3000 square, 60 for HD3000 640x480
+			NIVision.ParticleFilterCriteria2 criteria[] = new NIVision.ParticleFilterCriteria2[1];
+			NIVision.ParticleFilterOptions2 filterOptions = new NIVision.ParticleFilterOptions2(0,0,1,1);
+			Scores scores = new Scores();	
+
 	double distance = 0;
 
 	double leftDistance, rightDistance, modHeight;
@@ -74,7 +83,6 @@ public class ImageProcessor {
 	NIVision.Rect rect;
 	CameraServer server;
 	int session;
-	AxisCamera camera;
 
 	/**
 	 * Creates frames an takes a session
@@ -82,19 +90,19 @@ public class ImageProcessor {
 	 * @param inSession
 	 *            session from the main class to use, so cameras can switch fine
 	 */
-	public ImageProcessor(int inSession) {
-		session = inSession;
-		camera = new AxisCamera("10.22.22.34");
-		// session = NIVision.IMAQdxOpenCamera("cam1",
-		// NIVision.IMAQdxCameraControlMode.CameraControlModeController);
-		// NIVision.IMAQdxStopAcquisition(inSession);
-		// NIVision.IMAQdxConfigureGrab(session);
-
-		// create images
+	public ImageProcessorTemp(int inSession) {
+		camera = new AxisCamera("axis-camera.local");
+		camera.writeColorLevel(100);
+		camera.writeBrightness(26);
+		camera.writeWhiteBalance(WhiteBalance.kFixedOutdoor1);
+		camera.writeExposureControl(ExposureControl.kAutomatic);
+		System.out.println(camera);
+		
+		
 		frame = NIVision.imaqCreateImage(ImageType.IMAGE_RGB, 0);
 		binaryFrame = NIVision.imaqCreateImage(ImageType.IMAGE_U8, 0);
-		criteria[0] = new NIVision.ParticleFilterCriteria2(NIVision.MeasurementType.MT_AREA_BY_IMAGE_AREA, AREA_MINIMUM,
-				AREA_MAXIMUM, 0, 0);
+		criteria[0] = new NIVision.ParticleFilterCriteria2(NIVision.MeasurementType.MT_AREA_BY_IMAGE_AREA, AREA_MINIMUM, 100.0, 0, 0);
+
 
 	}
 
@@ -105,63 +113,44 @@ public class ImageProcessor {
 	 * @return if a target was found
 	 */
 	boolean lookForTarget() {
-		// get image and particle numbers
-		//NIVision.IMAQdxGrab(session, frame, 1);
-		//NIVision.imaqColorThreshold(binaryFrame, frame, 255, NIVision.ColorMode.HSV, TOTE_HUE_RANGE, TOTE_SAT_RANGE, TOTE_VAL_RANGE);
-		//NIVision.imaqColorThreshold(binaryFrame, frame, 255, NIVision.ColorMode.RGB, targetR, targetB, targetG);
-		NIVision.imaqColorThreshold(binaryFrame, frame, 255, NIVision.ColorMode.HSV, NEW_HUE_RANGE, NEW_SAT_RANGE, NEW_VAL_RANGE);
-		//NIVision.imaqColorThreshold(binaryFrame, frame, 255, NIVision.ColorMode.HSV, HOPE_HUE, HOPE_SAT, HOPE_VAL);
-		int numParticles = NIVision.imaqCountParticles(binaryFrame, 1);
+		camera.getImage(frame);
+		
+		//Threshold the image looking for yellow (tote color)
+		NIVision.imaqColorThreshold(binaryFrame, frame, 255, NIVision.ColorMode.HSV, TOTE_HUE_RANGE, TOTE_SAT_RANGE, TOTE_VAL_RANGE);
 
-		// filter out small particles
-		float areaMin = (float) AREA_MINIMUM;
+		//Send particle count to dashboard
+		int numParticles = NIVision.imaqCountParticles(binaryFrame, 1);
+		SmartDashboard.putNumber("Masked particles", numParticles);
+
+		//Send masked image to dashboard to assist in tweaking mask.
+		CameraServer.getInstance().setImage(binaryFrame);
+
+		//filter out small particles
+		float areaMin = (float)SmartDashboard.getNumber("Area min %", AREA_MINIMUM);
 		criteria[0].lower = areaMin;
 		imaqError = NIVision.imaqParticleFilter4(binaryFrame, binaryFrame, criteria, filterOptions, null);
 
-		// count relevant particles
+		//Send particle count after filtering to dashboard
 		numParticles = NIVision.imaqCountParticles(binaryFrame, 1);
+		SmartDashboard.putNumber("Filtered particles", numParticles);
 
-		// processing boundaries
-		if (numParticles > 0) {
-			// Measure particles and sort by particle size
+		if(numParticles > 0)
+		{
+			//Measure particles and sort by particle size
 			Vector<ParticleReport> particles = new Vector<ParticleReport>();
-			for (int particleIndex = 0; particleIndex < numParticles; particleIndex++) {
+			for(int particleIndex = 0; particleIndex < numParticles; particleIndex++)
+			{
 				ParticleReport par = new ParticleReport();
-				par.PercentAreaToImageArea = NIVision.imaqMeasureParticle(binaryFrame, particleIndex, 0,
-						NIVision.MeasurementType.MT_AREA_BY_IMAGE_AREA);
-				par.Area = NIVision.imaqMeasureParticle(binaryFrame, particleIndex, 0,
-						NIVision.MeasurementType.MT_AREA);
-				par.BoundingRectTop = NIVision.imaqMeasureParticle(binaryFrame, particleIndex, 0,
-						NIVision.MeasurementType.MT_BOUNDING_RECT_TOP);
-				par.BoundingRectLeft = NIVision.imaqMeasureParticle(binaryFrame, particleIndex, 0,
-						NIVision.MeasurementType.MT_BOUNDING_RECT_LEFT);
-				par.BoundingRectBottom = NIVision.imaqMeasureParticle(binaryFrame, particleIndex, 0,
-						NIVision.MeasurementType.MT_BOUNDING_RECT_BOTTOM);
-				par.BoundingRectRight = NIVision.imaqMeasureParticle(binaryFrame, particleIndex, 0,
-						NIVision.MeasurementType.MT_BOUNDING_RECT_RIGHT);
-				// if(par.BoundingRectLeft > 100) //use this to limit frame
-				// search size
-				if(par.BoundingRectRight < (640.0 * (2.0 / 3.0)) && par.BoundingRectLeft > (640.0 / 3.0) && par.BoundingRectBottom < 240)
-					particles.add(par);
+				par.PercentAreaToImageArea = NIVision.imaqMeasureParticle(binaryFrame, particleIndex, 0, NIVision.MeasurementType.MT_AREA_BY_IMAGE_AREA);
+				par.Area = NIVision.imaqMeasureParticle(binaryFrame, particleIndex, 0, NIVision.MeasurementType.MT_AREA);
+				par.BoundingRectTop = NIVision.imaqMeasureParticle(binaryFrame, particleIndex, 0, NIVision.MeasurementType.MT_BOUNDING_RECT_TOP);
+				par.BoundingRectLeft = NIVision.imaqMeasureParticle(binaryFrame, particleIndex, 0, NIVision.MeasurementType.MT_BOUNDING_RECT_LEFT);
+				par.BoundingRectBottom = NIVision.imaqMeasureParticle(binaryFrame, particleIndex, 0, NIVision.MeasurementType.MT_BOUNDING_RECT_BOTTOM);
+				par.BoundingRectRight = NIVision.imaqMeasureParticle(binaryFrame, particleIndex, 0, NIVision.MeasurementType.MT_BOUNDING_RECT_RIGHT);
+				particles.add(par);
 			}
 			particles.sort(null);
-
-			if (particles.size() == 0) {
-				CameraServer.getInstance().setImage(frame);
-				return false;
-			}
-
-			// figures out which particle is the most OP
-			double maxAspect = AspectScore(particles.elementAt(0));
-
-			int maxIndex = 0;
-			for (int i = 1; i < particles.size(); i++) {
-				if (AspectScore(particles.elementAt(i)) > maxAspect) {
-					maxAspect = AspectScore(particles.elementAt(i));
-					maxIndex = i;
-				}
-			}
-
+			
 			for (int i = 0; i < particles.size(); i++) {
 				int topBound = (int) particles.elementAt(i).BoundingRectTop;
 				int leftBound = (int) particles.elementAt(i).BoundingRectLeft;
@@ -171,7 +160,7 @@ public class ImageProcessor {
 						- (int) particles.elementAt(i).BoundingRectLeft;
 				rect = new NIVision.Rect(topBound, leftBound, height, width);
 				// (int)particles.elementAt(0).BoundingRectLeft
-				if (i == maxIndex) {
+				if (i == 0) {
 					NIVision.imaqDrawShapeOnImage(frame, frame, rect, DrawMode.DRAW_VALUE, ShapeMode.SHAPE_RECT, 0.0f);
 					SmartDashboard.putNumber("frameHeight", height);
 					SmartDashboard.putNumber("frameWidth", width);
@@ -187,28 +176,28 @@ public class ImageProcessor {
 				} else
 					NIVision.imaqDrawShapeOnImage(frame, frame, rect, DrawMode.DRAW_VALUE, ShapeMode.SHAPE_OVAL, 0.0f);
 			}
-			CameraServer.getInstance().setImage(frame);
-			//CameraServer.getInstance().setImage(binaryFrame);
-			scores.Aspect = AspectScore(particles.elementAt(maxIndex));
-			SmartDashboard.putNumber("Aspect", scores.Aspect);
-			scores.Area = AreaScore(particles.elementAt(maxIndex));
-			SmartDashboard.putNumber("Area", scores.Area);
-			// boolean isTote = scores.Aspect > SCORE_MIN && scores.Area >
-			// SCORE_MIN;
 
-			// Send distance and tote status to dashboard. The bounding rect,
-			// particularly the horizontal center (left - right) may be useful
-			// for rotating/driving towards a tote
-			// SmartDashboard.putBoolean("IsTote", isTote);
-			distance = computeDistance(binaryFrame, particles.elementAt(0));
-			SmartDashboard.putNumber("Distance", distance);
+			//This example only scores the largest particle. Extending to score all particles and choosing the desired one is left as an exercise
+			//for the reader. Note that this scores and reports information about a single particle (single L shaped target). To get accurate information 
+			//about the location of the tote (not just the distance) you will need to correlate two adjacent targets in order to find the true center of the tote.
+			scores.Aspect = AspectScore(particles.elementAt(0));
+			SmartDashboard.putNumber("Aspect", scores.Aspect);
+			scores.Area = AreaScore(particles.elementAt(0));
+			SmartDashboard.putNumber("Area", scores.Area);
+			boolean isTote = scores.Aspect > SCORE_MIN && scores.Area > SCORE_MIN;
+
+			//Send distance and tote status to dashboard. The bounding rect, particularly the horizontal center (left - right) may be useful for rotating/driving towards a tote
+			SmartDashboard.putBoolean("IsTote", isTote);
+			SmartDashboard.putNumber("Distance", computeDistance(binaryFrame, particles.elementAt(0)));
 			return true;
-		} else {
-			// SmartDashboard.putBoolean("IsTote", false);
-			CameraServer.getInstance().setImage(frame);
-			//CameraServer.getInstance().setImage(binaryFrame);
+		} 
+		else 
+		{
+			SmartDashboard.putBoolean("IsTote", false);
 			return false;
 		}
+
+		
 	}
 
 	/**
@@ -247,34 +236,7 @@ public class ImageProcessor {
 		return distance;
 	}
 
-	/**
-	 * Keeps data on a particle, including a rectangle the bounds it
-	 */
-	public class ParticleReport implements Comparator<ParticleReport>, Comparable<ParticleReport> {
-		double PercentAreaToImageArea;
-		double Area;
-		double BoundingRectLeft;
-		double BoundingRectTop;
-		double BoundingRectRight;
-		double BoundingRectBottom;
 
-		public int compareTo(ParticleReport r) {
-			return (int) (r.Area - this.Area);
-		}
-
-		public int compare(ParticleReport r1, ParticleReport r2) {
-			return (int) (r1.Area - r2.Area);
-		}
-	};
-
-	/**
-	 * Structure to represent the scores for the various tests used for target
-	 * identification
-	 */
-	public class Scores {
-		double Area;
-		double Aspect;
-	};
 
 	// Comparator function for sorting particles. Returns true if particle 1 is
 	// larger

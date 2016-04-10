@@ -22,7 +22,7 @@ public class Autonomous {
 	Gyro gyro;
 	TwilightTalon collector, rightShooter, leftShooter, collectorExtender;
 	Timer timer;
-	ImageProcessor processor;
+	ImageProcessorTemp processor;
 	SerialCom serial;
 	
 	/**
@@ -34,7 +34,7 @@ public class Autonomous {
 	 * @param inLShooter left shooter talon
 	 * @param inProcessor image processor
 	 */
-	public Autonomous(Drivetrain inDrivetrain, Gyro inGyro, TwilightTalon inCollector, TwilightTalon inRShooter, TwilightTalon inLShooter, ImageProcessor inProcessor, SerialCom inSerial, TwilightTalon inExtender)
+	public Autonomous(Drivetrain inDrivetrain, Gyro inGyro, TwilightTalon inCollector, TwilightTalon inRShooter, TwilightTalon inLShooter, ImageProcessorTemp inProcessor, SerialCom inSerial, TwilightTalon inExtender)
 	{
 		drivetrain = inDrivetrain;
 		gyro = inGyro;
@@ -91,7 +91,7 @@ public class Autonomous {
 		tempTime.start();
 		while(true)
 		{
-			Timer.delay(0.1); //allows robot to settle
+			//Timer.delay(0.1); //allows robot to settle
 			double temp = processor.getLeftRightDistance();
 			SmartDashboard.putNumber("leftRight", temp);
 			//right - left
@@ -103,13 +103,15 @@ public class Autonomous {
 			{
 				//look again
 			}
-			else if(temp > 15 || temp < -15)
+			else if(temp > 25 || temp < -25)
 			{
-				double temp2 = temp / 80;
-				if(temp2 > 0.5)
-					temp2 = 0.5;
-				else if(temp2 < -0.5)
-					temp2 = -0.5;
+				double temp2 = temp * 0.0075;
+				/*
+				if(temp2 > 0.75)
+					temp2 = 0.75;
+				else if(temp2 < -0.75)
+					temp2 = -0.75;
+					*/
 				drivetrain.setLeftWheels(temp2);
 				drivetrain.setRightWheels(-temp2); //right reversed
 				Timer.delay(0.1);
@@ -118,7 +120,7 @@ public class Autonomous {
 			}
 			else
 				break;
-			if(tempTime.get() > 10)
+			if(tempTime.get() > 1)
 				break;
 		}
 	}

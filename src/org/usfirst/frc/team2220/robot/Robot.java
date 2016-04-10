@@ -11,6 +11,12 @@ import edu.wpi.first.wpilibj.*;
 import edu.wpi.first.wpilibj.CANTalon.*;
 import edu.wpi.first.wpilibj.interfaces.*;
 import edu.wpi.first.wpilibj.smartdashboard.*;
+import edu.wpi.first.wpilibj.vision.AxisCamera;
+import com.ni.vision.NIVision.DrawMode;
+import com.ni.vision.NIVision.Image;
+import com.ni.vision.NIVision.ShapeMode;
+import edu.wpi.first.wpilibj.CameraServer;
+import edu.wpi.first.wpilibj.Timer;
 import java.io.*;
 import java.util.ArrayList;
 
@@ -22,22 +28,23 @@ import java.util.ArrayList;
  */
 public class Robot extends SampleRobot {
     SmartDashboard dashboard;
-
+    int session;
+    AxisCamera camera;
     public Robot() {
         
     }    
     
-    TwilightTalon talon7 = new TwilightTalon(7);
-	ModuleRotation frModule = new ModuleRotation(talon7);
+    //TwilightTalon talon7 = new TwilightTalon(7);
+	//ModuleRotation frModule = new ModuleRotation(talon7);
 	
-	TwilightTalon talon2 = new TwilightTalon(2);
-	ModuleRotation flModule = new ModuleRotation(talon2);
+	//TwilightTalon talon2 = new TwilightTalon(2);
+	//ModuleRotation flModule = new ModuleRotation(talon2);
 	
-	TwilightTalon talon4 = new TwilightTalon(4);
-	ModuleRotation blModule = new ModuleRotation(talon4);
+	//TwilightTalon talon4 = new TwilightTalon(4);
+	//ModuleRotation blModule = new ModuleRotation(talon4);
 	
-	TwilightTalon talon5 = new TwilightTalon(5);
-	ModuleRotation brModule = new ModuleRotation(talon5);
+	//TwilightTalon talon5 = new TwilightTalon(5);
+	//ModuleRotation brModule = new ModuleRotation(talon5);
 	
 	//SmartDashboard dash = new SmartDashboard();
 
@@ -88,7 +95,7 @@ public class Robot extends SampleRobot {
 	double prevPOVval= 0;
 	
 	double allTuning;
-	ImageProcessor processor;
+	ImageProcessorTemp processor;
 	Autonomous autonomous;
 	SerialCom serial;
 
@@ -99,13 +106,18 @@ public class Robot extends SampleRobot {
 	{
 		serial = new SerialCom();
 		
-		frame = NIVision.imaqCreateImage(ImageType.IMAGE_RGB, 0);
-		session0 = NIVision.IMAQdxOpenCamera("cam0", NIVision.IMAQdxCameraControlMode.CameraControlModeController);
-		session1 = NIVision.IMAQdxOpenCamera("cam1", NIVision.IMAQdxCameraControlMode.CameraControlModeController);
-		NIVision.IMAQdxConfigureGrab(session1);
-		processor = new ImageProcessor(session1);
 		
+		//session0 = NIVision.IMAQdxOpenCamera("cam0", NIVision.IMAQdxCameraControlMode.CameraControlModeController);
+		//session1 = NIVision.IMAQdxOpenCamera("cam1", NIVision.IMAQdxCameraControlMode.CameraControlModeController);
+		//NIVision.IMAQdxConfigureGrab(session1);
+		processor = new ImageProcessorTemp(4);
 		
+		frame = NIVision.imaqCreateImage(NIVision.ImageType.IMAGE_RGB, 0);
+
+	        // open the camera at the IP address assigned. This is the IP address that the camera
+	        // can be accessed through the web interface.
+	        camera = new AxisCamera("10.1.91.100");
+	    
 		collectorExtender.enableBrakeMode(true);
     	
     	frWheel.setMaxCurrent(100);
@@ -113,10 +125,10 @@ public class Robot extends SampleRobot {
     	brWheel.setMaxCurrent(100);
     	blWheel.setMaxCurrent(100);
     	
-    	talon2.setMaxCurrent(60);
-    	talon4.setMaxCurrent(60);
-    	talon5.setMaxCurrent(60);
-    	talon7.setMaxCurrent(60);
+    	//talon2.setMaxCurrent(60);
+    	//talon4.setMaxCurrent(60);
+    	//talon5.setMaxCurrent(60);
+    	//talon7.setMaxCurrent(60);
     	
     	collector.setMaxCurrent(60);
     	rightShooter.setMaxCurrent(70);
@@ -126,22 +138,25 @@ public class Robot extends SampleRobot {
     	collectorExtender.setMaxCurrent(120);
     	//lifterRelease.setMaxCurrent(30);
     	
-    	flModule.reverseTalon(true);
-    	blModule.reverseTalon(true);
+    	//flModule.reverseTalon(false);
+    	//blModule.reverseTalon(true);
     	
-    	frModule.reverseTalon(true);
-    	brModule.reverseTalon(false);
+    	//frModule.reverseTalon(false);
+    	//brModule.reverseTalon(true);
     	
-    	frModule.setRightWheel(true);
-    	brModule.setRightWheel(true);
     	
-    	frModule.reverseSensor(false);
-    	brModule.reverseSensor(false);
+    	//frModule.setRightWheel(true);
+    	//brModule.setRightWheel(true);
     	
-    	talon2.enableBrakeMode(false);
-    	talon4.enableBrakeMode(false);
-    	talon5.enableBrakeMode(false);
-    	talon7.enableBrakeMode(false);
+    	//frModule.reverseSensor(false);
+    	//brModule.reverseSensor(true);
+    
+    	//blModule.reverseSensor(true);
+    	
+    	//talon2.enableBrakeMode(false);
+    	//talon4.enableBrakeMode(false);
+    	//talon5.enableBrakeMode(false);
+    	//talon7.enableBrakeMode(false);
     	
 
     	rightShooter.changeControlMode(TalonControlMode.Voltage);
@@ -149,21 +164,21 @@ public class Robot extends SampleRobot {
     	leftShooter.reverseOutput(true);
     	
     	autonomous = new Autonomous(drivetrain, gyro, collector, leftShooter, rightShooter, processor, serial, collectorExtender);
-    	allTuning = 1.5;
+    	//allTuning = 1.5;//prev 1.5
     	
-    	frModule.setP(allTuning);
-    	brModule.setP(allTuning);
-    	flModule.setP(allTuning);
-    	blModule.setP(allTuning);
+    	//frModule.setP(allTuning);
+    	//brModule.setP(allTuning);
+    	//flModule.setP(allTuning);
+    	//blModule.setP(allTuning);
     	
-    	drivetrain.setModules(flModule, frModule, brModule, blModule);
+    	//drivetrain.setModules(flModule, frModule, brModule, blModule);
     	drivetrain.setWheels(flWheel, frWheel, brWheel, blWheel);
     }
 	
 	
 	//Accelerometer accel = new BuiltInAccelerometer();
 	boolean autoShooting = false;
-	double shotLength = 1.375;
+	double shotLength = 1.6;
 	/**
      * Using the autonomous object, runs a series of function on 
      * the declared drivetrain to complete autonomous goals
@@ -172,6 +187,7 @@ public class Robot extends SampleRobot {
     {
     	if(isEnabled() && isAutonomous())
     	{
+    		/*
 	    	frWheel.enableBrakeMode(true);
 	    	flWheel.enableBrakeMode(true);
 	    	brWheel.enableBrakeMode(true);
@@ -190,6 +206,9 @@ public class Robot extends SampleRobot {
 	    	autonomous.lineUpToShoot();
 	    	autonomous.readSerial();
 	    	autonomous.shoot();
+	    	*/
+    		processor.lookForTarget();
+    		Timer.delay(0.005);				// wait for a motor update time
 	    	
 	    	
 	    	
@@ -235,9 +254,10 @@ public class Robot extends SampleRobot {
     	double leftAxis, rightAxis;
     	double wenchAxis;
     	double wheelDZ = 0.15;
-    	double tempTune;
+    	//double tempTune;
     	int dashCount = 0;
     	double shooterVoltage = 10;
+    	
     	
         while (isOperatorControl() && isEnabled()) {
 			/////////////////////////
@@ -250,9 +270,9 @@ public class Robot extends SampleRobot {
         	serial.update();
         	
            
-            SmartDashboard.putNumber("rawLidar", serial.getLidarValue());
-            SmartDashboard.putNumber("lidar", serial.getAverageLidarValue());
-            System.out.println("" + serial.getAverageLidarValue() + " " + serial.getLidarValue() +  " " + shooterVoltage);
+            //SmartDashboard.putNumber("rawLidar", serial.getLidarValue());
+            //SmartDashboard.putNumber("lidar", serial.getAverageLidarValue());
+            //System.out.println("" + serial.getAverageLidarValue() + " " + serial.getLidarValue() +  " " + shooterVoltage);
 			/////////////////////////
 			//  Primary Controller //
 			/////////////////////////
@@ -261,19 +281,24 @@ public class Robot extends SampleRobot {
 			/////////////////////////
 			//       Modules       //
 			/////////////////////////
-        	if(driverController.onPress(TriggerButton.lTrigger))
-        		drivetrain.incrementAllModules(-1);
+        	//if(driverController.onPress(TriggerButton.lTrigger))
+        		//drivetrain.incrementAllModules(-1);
         	
-        	if(driverController.onPress(TriggerButton.rTrigger))
-        		drivetrain.incrementAllModules(1);
+        	//if(driverController.onPress(TriggerButton.rTrigger))
+        		//drivetrain.incrementAllModules(1);
         	
         	if(driverController.onPress(Button.rBumper))
         		drivetrain.turnOutwards();
         	
         	if(driverController.onPress(Button.lBumper))
         		drivetrain.turnInwards();
+        	if(driverController.whileHeld(Button.xButton))
+        	{
+        		processor.lookForTarget();
+        		autonomous.lineUpToShoot();
+        	}
         	
-        	if(driverController.whileHeld(Button.aButton))
+        	/*if(driverController.whileHeld(Button.aButton))
         	{
         		tempTune = 0.4;
         		frModule.setP(tempTune);
@@ -290,7 +315,7 @@ public class Robot extends SampleRobot {
         		brModule.setP(tempTune);
         	}
         	SmartDashboard.putNumber("tempTune", tempTune);
-        	
+        	*/
 			/////////////////////////
 			//     Drive Wheels    //
 			/////////////////////////
@@ -327,9 +352,9 @@ public class Robot extends SampleRobot {
 			/////////////////////////
 			//    Shooter Wheels   //
 			/////////////////////////
-			shooterVoltage = (12.2204) * Math.pow((.99989), (serial.getAverageLidarValue()));
-			if(shooterVoltage < 8.9)
-				shooterVoltage = 8.9;
+			shooterVoltage = 15;
+			//if(shooterVoltage < 8.9)
+				//shooterVoltage = 8.9;
 			
 			
 			if(manipulatorController.whileHeld(Button.aButton))
@@ -337,8 +362,8 @@ public class Robot extends SampleRobot {
 				autoShooting = true;
 				if(shootTimer.get() == 0)
 					shootTimer.start();
-				rightShooter.set(shooterVoltage);
-				leftShooter.set(-shooterVoltage);
+				rightShooter.set(-shooterVoltage);
+				leftShooter.set(shooterVoltage);
 				if(shootTimer.get() > shotLength)
 				{
 					collector.set(1.0);
@@ -381,7 +406,8 @@ public class Robot extends SampleRobot {
 			SmartDashboard.putNumber("shootTimer", shootTimer.get());
 			/////////////////////////
 			//    Camera Toggle    //
-			/////////////////////////
+			/////////////////////////TODO add cameras
+			/*
 			double currentPOVval = driverController.getPOV();
 			if(currentPOVval == 270 && prevPOVval != 270)
 			{
@@ -408,6 +434,25 @@ public class Robot extends SampleRobot {
 				NIVision.IMAQdxGrab(session0, frame, 1);
 			}
 			CameraServer.getInstance().setImage(frame);
+			*/
+			 /**
+	         * grab an image from the camera, draw the circle, and provide it for the camera server
+	         * which will in turn send it to the dashboard.
+	         */
+			/*
+	        NIVision.Rect rect = new NIVision.Rect(10, 10, 100, 100);
+
+	            camera.getImage(frame);
+	            NIVision.imaqDrawShapeOnImage(frame, frame, rect,
+	                    DrawMode.DRAW_VALUE, ShapeMode.SHAPE_OVAL, 0.0f);
+
+	            CameraServer.getInstance().setImage(frame);
+
+//	            /** robot code here! **/
+			
+	            //Timer.delay(0.005);		// wait for a motor update time
+	        
+	        
 			/////////////////////////
 			//  Collector Extender //
 			/////////////////////////
@@ -481,7 +526,7 @@ public class Robot extends SampleRobot {
         	flWheel.test();
         	blWheel.test();
         	brWheel.test();
-
+        	/*
         	talon7.test();
         	talon2.test();
         	talon4.test();
@@ -509,6 +554,7 @@ public class Robot extends SampleRobot {
         		blModule.resetTarget();
         		brModule.resetTarget();
         	}
+        	
         	if(manipulatorController.onPress(Button.start))
         	{
         		talon7.disable();
@@ -516,7 +562,7 @@ public class Robot extends SampleRobot {
         		talon4.disable();
         		talon5.disable();
         	}
-        	
+        	*/
         	
         	collector.test();
         	//rightShooter.test(); //except these ones i guess
@@ -541,7 +587,7 @@ public class Robot extends SampleRobot {
     	SmartDashboard.putBoolean("frontCollector", !frontCollector.get());
     	SmartDashboard.putBoolean("rearCollector", !rearCollector.get());
     	
-    	SmartDashboard.putNumber("backRightErr", talon5.getError());
+    	/*SmartDashboard.putNumber("backRightErr", talon5.getError());
     	SmartDashboard.putNumber("backLeftErr", talon4.getError());
     	SmartDashboard.putNumber("frontRightErr", talon7.getError());
     	SmartDashboard.putNumber("frontLeftErr", talon2.getError());
@@ -574,7 +620,7 @@ public class Robot extends SampleRobot {
     	SmartDashboard.putBoolean("disabledBL", talon4.isDisabled());
     	SmartDashboard.putBoolean("disabledFR", talon7.isDisabled());
     	SmartDashboard.putBoolean("disabledFL", talon2.isDisabled());
-    	
+    	*/
     	SmartDashboard.putNumber("leftShooterCurrent", leftShooter.getOutputCurrent());
     	SmartDashboard.putNumber("rightShooterCurrent", rightShooter.getOutputCurrent());
 	
@@ -582,7 +628,7 @@ public class Robot extends SampleRobot {
 		/////////////////////////
 		//     Max Currents    //
 		/////////////////////////
-    	double[] maxVal = new double[4];
+    	/*double[] maxVal = new double[4];
     	double[] temp = new double[4];
     	
     	temp[0] = talon5.getOutputCurrent();
@@ -604,7 +650,7 @@ public class Robot extends SampleRobot {
     	if(temp[3] > maxVal[3])
     		maxVal[3] = temp[3];
     	SmartDashboard.putNumber("maxFL", maxVal[3]);
-    	
+    */	
     }
     /**
      * Checks if a value is within a "dead zone"
@@ -623,11 +669,13 @@ public class Robot extends SampleRobot {
     {
     	while(isEnabled())
     	{
-    		SmartDashboard.putNumber("backRightErr", talon5.getError());
+    		/*SmartDashboard.putNumber("backRightErr", talon5.getError());
     		SmartDashboard.putNumber("backLeftErr", talon4.getError());
 	    	SmartDashboard.putNumber("frontRightErr", talon7.getError());
 	    	SmartDashboard.putNumber("frontLeftErr", talon2.getError());
+	    	*/
     	}
+    	
     }
 
     public void test() {
