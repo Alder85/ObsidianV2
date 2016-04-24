@@ -108,15 +108,23 @@ public class Robot extends SampleRobot {
 		
 		
 		//session0 = NIVision.IMAQdxOpenCamera("cam0", NIVision.IMAQdxCameraControlMode.CameraControlModeController);
-		//session1 = NIVision.IMAQdxOpenCamera("cam1", NIVision.IMAQdxCameraControlMode.CameraControlModeController);
-		//NIVision.IMAQdxConfigureGrab(session1);
+		try
+		{
+		session1 = NIVision.IMAQdxOpenCamera("cam0", NIVision.IMAQdxCameraControlMode.CameraControlModeController);
+		NIVision.IMAQdxConfigureGrab(session1);
+		}
+		catch (Exception e){}
+		//try
+		//{
 		processor = new ImageProcessorTemp(4);
+		//}
+		//catch(Exception e){}
 		
 		frame = NIVision.imaqCreateImage(NIVision.ImageType.IMAGE_RGB, 0);
 
 	        // open the camera at the IP address assigned. This is the IP address that the camera
 	        // can be accessed through the web interface.
-	        camera = new AxisCamera("10.1.91.100");
+	       // camera = new AxisCamera("axis-camera.local");
 	    
 		collectorExtender.enableBrakeMode(true);
     	
@@ -193,21 +201,44 @@ public class Robot extends SampleRobot {
 	    	brWheel.enableBrakeMode(true);
 	    	blWheel.enableBrakeMode(true);
 	    	//lowbar
-	    	
+	    	//Calvin auto autonomous
 	    	//autonomous.shoot();
 	    	//autonomous.lineUpToShoot();
 	    	//autonomous.readSerial();
 	    	//autonomous.shoot();
-	    	
-	    	autonomous.extendCollector(0.6);
-	    	
-	    	autonomous.driveGyro(2.7, 0.6); //this goes under low bar from start position
-	    	autonomous.pointTurnGyro(55, 0.6);
-	    	autonomous.lineUpToShoot();
-	    	autonomous.readSerial();
-	    	autonomous.shoot();
 	    	*/
-    		processor.lookForTarget();
+    		
+	    	autonomous.extendCollector(1.75);
+	    	
+	    	
+	    	autonomous.driveGyro(1.55, 0.6); //this goes under low bar from start position
+	    	Timer.delay(0.75);
+	    	autonomous.turnGyro(30, 0.65, 0.3);
+	    	
+	    	autonomous.driveGyro(0.3, 0.6);
+
+	    	for(int i = 0;i < 1;i++)
+    		{
+    			autonomous.lineUpToShoot(true);
+    		}
+	    	for(int i = 0;i < 2;i++)
+    		{
+    			autonomous.lineUpToShoot(false);
+    		}
+	    	for(int i = 0;i < 2;i++)
+    		{
+    			autonomous.lineUpToShoot(true);
+    		}
+    		
+	    	autonomous.shoot();
+	    	
+	    	autonomous.driveGyro(0.175, -0.6);
+	    	
+	    	autonomous.turnGyro(-40, 0.65, 0.3);
+	    	autonomous.driveGyro(1.5, -0.7);
+	    	
+    		//processor.lookForTarget();
+    		
     		Timer.delay(0.005);				// wait for a motor update time
 	    	
 	    	
@@ -294,8 +325,12 @@ public class Robot extends SampleRobot {
         		drivetrain.turnInwards();
         	if(driverController.whileHeld(Button.xButton))
         	{
-        		processor.lookForTarget();
-        		autonomous.lineUpToShoot();
+        		//processor.lookForTarget(false);
+        		autonomous.lineUpToShoot(true);
+        	}
+        	if(driverController.whileHeld(Button.bButton))
+        	{
+        		autonomous.lineUpToShoot(false);
         	}
         	
         	/*if(driverController.whileHeld(Button.aButton))
@@ -378,18 +413,19 @@ public class Robot extends SampleRobot {
         	}
 			
 			
-			/*
+			
 			if(manipulatorController.onPress(Button.lBumper))
 			{
-				shooterVoltage = 8.5;
-				shotLength = 1.3;
+				//shooterVoltage = 8.5;
+				shotLength = 1.5;
 			}
 			if(manipulatorController.onPress(Button.rBumper))
 			{
-				shooterVoltage = 10.5;
-				shotLength = 1.5;
+				//shooterVoltage = 10.5;
+				shotLength = 2.1;
 			}
 			
+			/*
 			try
 			{
 				shooterVoltage = SmartDashboard.getNumber("shooterVoltage");
@@ -427,14 +463,20 @@ public class Robot extends SampleRobot {
 			prevPOVval = currentPOVval;
 			if(isCam1)
 			{
-				NIVision.IMAQdxGrab(session1, frame, 1);
+				
 			}
 			else
 			{
 				NIVision.IMAQdxGrab(session0, frame, 1);
 			}
-			CameraServer.getInstance().setImage(frame);
+			
 			*/
+			try
+			{
+				NIVision.IMAQdxGrab(session1, frame, 1);
+				CameraServer.getInstance().setImage(frame);
+			}
+			catch(Exception e){}
 			 /**
 	         * grab an image from the camera, draw the circle, and provide it for the camera server
 	         * which will in turn send it to the dashboard.

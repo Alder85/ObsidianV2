@@ -65,16 +65,17 @@ public class Autonomous {
 	 */
 	public void shoot()
 	{
-		double voltVal = (12.2204) * Math.pow((.99989), (serial.getAverageLidarValue()));
-		voltVal = 8.8;
+		//double voltVal = (12.2204) * Math.pow((.99989), (serial.getAverageLidarValue()));
+		double voltVal = 15;
 		collector.set(-1.0);
-		Timer.delay(0.15); //previously 0.05
+		Timer.delay(0.175); //previously 0.05
 		collector.set(0);
-		rightShooter.set(-voltVal);
-		leftShooter.set(voltVal);
-		Timer.delay(1.375);
+		Timer.delay(0.75);
+		rightShooter.set(voltVal);
+		leftShooter.set(-voltVal);
+		Timer.delay(1.3);
 		collector.set(1.0);
-		Timer.delay(2.0);
+		Timer.delay(0.75);
 		rightShooter.set(0);
 		leftShooter.set(0);
 		collector.set(0);
@@ -85,44 +86,65 @@ public class Autonomous {
 	/**
 	 * Uses RTL camera values to line up facing straight at the goal
 	 */
-	public void lineUpToShoot()
+	public boolean lineUpToShoot(boolean favorLeft)
 	{
 		Timer tempTime = new Timer();
 		tempTime.start();
 		while(true)
 		{
+			//calvin image processing
 			//Timer.delay(0.1); //allows robot to settle
-			double temp = processor.getLeftRightDistance();
-			SmartDashboard.putNumber("leftRight", temp);
+			double leftRightValue = 0;
+			try
+			{
+				leftRightValue = processor.getLeftRightDistance(favorLeft);
+			} catch(Exception e){}
+			SmartDashboard.putNumber("leftRight", leftRightValue);
+			int leftRightMid = -20;
+			int leftRightRange = 20;
+			
 			//right - left
 			//if right bound positive
 			//if left bound negative
-			//if you want to bias right, increase negative allowance
-			//if you want to bias left, increase positive allowance
-			if(temp == 0)
+			//if you want to bias right, increase leftRightMid
+			//if you want to bias left, decrease leftRightMid
+			if(leftRightValue == 0) 
 			{
 				//look again
 			}
-			else if(temp > 25 || temp < -25)
+			else if(leftRightValue > leftRightMid + leftRightRange || leftRightValue < leftRightMid - leftRightRange) //values in pixels
 			{
-				double temp2 = temp * 0.0075;
-				/*
-				if(temp2 > 0.75)
-					temp2 = 0.75;
-				else if(temp2 < -0.75)
-					temp2 = -0.75;
-					*/
-				drivetrain.setLeftWheels(temp2);
-				drivetrain.setRightWheels(-temp2); //right reversed
+				leftRightValue -= leftRightMid;
+				double wheelMoveVal = leftRightValue * 0.003; //previously .0075
+				
+				double maxVal = 0.8;
+				double minVal = 0.38;
+				if(wheelMoveVal > maxVal)
+					wheelMoveVal = maxVal;
+				else if(wheelMoveVal < -maxVal)
+					wheelMoveVal = -maxVal;
+				if(wheelMoveVal < minVal && wheelMoveVal > -minVal)
+				{
+					if(wheelMoveVal < minVal)
+						wheelMoveVal = minVal;
+					else if(wheelMoveVal > -minVal)
+						wheelMoveVal = -minVal;
+				}
+				
+				SmartDashboard.putNumber("turnVal", wheelMoveVal);
+					
+				drivetrain.setLeftWheels(wheelMoveVal);
+				drivetrain.setRightWheels(-wheelMoveVal); //right reversed
 				Timer.delay(0.1);
 				drivetrain.setLeftWheels(0);
 				drivetrain.setRightWheels(0);
 			}
 			else
-				break;
-			if(tempTime.get() > 1)
+				return true;
+			if(tempTime.get() > 0.5)
 				break;
 		}
+		return false;
 	}
 	
 	/**
@@ -135,6 +157,25 @@ public class Autonomous {
 		Timer.delay(0.25);
 		drivetrain.turnInwards();
 		Timer.delay(0.1);
+	}
+	
+	public void timePointTurn(double turnTime, double motorPower, boolean rightSide)
+	{
+		timer.reset();
+		timer.start();
+		while(timer.get() < turnTime)
+		{
+			if(rightSide)
+			{
+				drivetrain.setRightWheels(motorPower);
+			}
+			else
+			{
+				drivetrain.setLeftWheels(motorPower);
+			}
+		}
+		drivetrain.setRightWheels(0);
+		drivetrain.setLeftWheels(0);
 	}
 	
 	/**
@@ -155,39 +196,148 @@ public class Autonomous {
 	 * @param degrees Degrees to turn, positive to turn right, negative for left
 	 * @param motorPower Motor power for the inital turn, the second turn is motorPower - 0.1
 	 */
-	public void turnGyro(double degrees, double motorPower)
+	public void turnGyro(double degrees, double rightMotorPower, double leftMotorPower)
 	{
 		double desiredVal = gyro.getAngle() + degrees;
 		double tolerance = 3;
 		double correctVal = 0.1;
+		double maxTime = 1.5;
+		timer.reset();
+		timer.start();
 		if(degrees > 0)
 		{
 			while(gyro.getAngle() < desiredVal)
 			{
-					drivetrain.setRightWheels(motorPower);
-					drivetrain.setLeftWheels(-motorPower);
+					drivetrain.setRightWheels(rightMotorPower);
+					drivetrain.setLeftWheels(-leftMotorPower);
+					if(timer.get() > maxTime)
+					{
+						drivetrain.setRightWheels(0);
+						drivetrain.setLeftWheels(0);
+						return;
+					}
+						
 			}		
 			while(gyro.getAngle() > desiredVal)
 			{
-				drivetrain.setRightWheels(-motorPower + correctVal);
-				drivetrain.setLeftWheels(motorPower - correctVal);
+				drivetrain.setRightWheels(-rightMotorPower + correctVal);
+				drivetrain.setLeftWheels(leftMotorPower - correctVal);
+				if(timer.get() > maxTime)
+				{
+					drivetrain.setRightWheels(0);
+					drivetrain.setLeftWheels(0);
+					return;
+				}
 			}
 		}
 		else if(degrees < 0)
 		{
 			while(gyro.getAngle() > desiredVal)
 			{
-				drivetrain.setRightWheels(-motorPower);
-				drivetrain.setLeftWheels(motorPower);
+				drivetrain.setRightWheels(-rightMotorPower);
+				drivetrain.setLeftWheels(leftMotorPower);
+				if(timer.get() > maxTime)
+				{
+					drivetrain.setRightWheels(0);
+					drivetrain.setLeftWheels(0);
+					return;
+				}
 			}
 			while(gyro.getAngle() < desiredVal)
 			{
-				drivetrain.setRightWheels(motorPower - correctVal);
-				drivetrain.setLeftWheels(-motorPower + correctVal);
+				drivetrain.setRightWheels(rightMotorPower - correctVal);
+				drivetrain.setLeftWheels(-leftMotorPower + correctVal);
+				if(timer.get() > maxTime)
+				{
+					drivetrain.setRightWheels(0);
+					drivetrain.setLeftWheels(0);
+					return;
+				}
 			}
 		}
 		drivetrain.setLeftWheels(0);
 		drivetrain.setRightWheels(0);
+	}
+	/**
+	 * Turns using the gyro
+	 * First takes a reading, turns a number of degrees to a point, then nudges the robot back if it overshoots
+	 * @param degrees Degrees to turn, positive to turn right, negative for left
+	 * @param motorPower Motor power for the inital turn, the second turn is motorPower - 0.1
+	 */
+	public void turnToPointGyro(double degrees, double rightMotorPower, double leftMotorPower)
+	{
+		double desiredVal = degrees;
+		double tolerance = 3;
+		double correctVal = 0.1;
+		double maxTime = 3.0;
+		timer.reset();
+		timer.start();
+		if(degrees > 0)
+		{
+			while(gyro.getAngle() < desiredVal)
+			{
+					drivetrain.setRightWheels(rightMotorPower);
+					drivetrain.setLeftWheels(-leftMotorPower);
+					if(timer.get() > maxTime)
+					{
+						drivetrain.setRightWheels(0);
+						drivetrain.setLeftWheels(0);
+						return;
+					}
+						
+			}		
+			while(gyro.getAngle() > desiredVal)
+			{
+				drivetrain.setRightWheels(-rightMotorPower + correctVal);
+				drivetrain.setLeftWheels(leftMotorPower - correctVal);
+				if(timer.get() > maxTime)
+				{
+					drivetrain.setRightWheels(0);
+					drivetrain.setLeftWheels(0);
+					return;
+				}
+			}
+		}
+		else if(degrees <= 0)
+		{
+			while(gyro.getAngle() > desiredVal)
+			{
+				drivetrain.setRightWheels(-rightMotorPower);
+				drivetrain.setLeftWheels(leftMotorPower);
+				if(timer.get() > maxTime)
+				{
+					drivetrain.setRightWheels(0);
+					drivetrain.setLeftWheels(0);
+					return;
+				}
+			}
+			while(gyro.getAngle() < desiredVal)
+			{
+				drivetrain.setRightWheels(rightMotorPower - correctVal);
+				drivetrain.setLeftWheels(-leftMotorPower + correctVal);
+				if(timer.get() > maxTime)
+				{
+					drivetrain.setRightWheels(0);
+					drivetrain.setLeftWheels(0);
+					return;
+				}
+			}
+		}
+		drivetrain.setLeftWheels(0);
+		drivetrain.setRightWheels(0);
+	}
+	
+	public void timeTurn(double turnTime, double motorPower)
+	{
+		timer.reset();
+		timer.start();
+		while(timer.get() < turnTime)
+		{
+			drivetrain.setRightWheels(motorPower);
+			drivetrain.setLeftWheels(-motorPower);
+		}
+		drivetrain.setRightWheels(0);
+		drivetrain.setLeftWheels(0);
 	}
 	
 	public void pointTurnGyro(double degrees, double motorPower)
@@ -195,17 +345,33 @@ public class Autonomous {
 		double desiredVal = gyro.getAngle() + degrees;
 		double tolerance = 3;
 		double correctVal = 0.1;
+		double maxTimeVal = 1.5;
+		timer.reset();
+		timer.start();
 		if(degrees > 0)
 		{
 			while(gyro.getAngle() < desiredVal)
 			{
 					drivetrain.setRightWheels(motorPower);
 					drivetrain.setLeftWheels(0);
+					if(timer.get() > maxTimeVal)
+					{
+						drivetrain.setLeftWheels(0);
+						drivetrain.setRightWheels(0);
+						return;
+					}
 			}		
 			while(gyro.getAngle() > desiredVal)
 			{
 				drivetrain.setRightWheels(-motorPower + correctVal);
 				drivetrain.setLeftWheels(motorPower - correctVal);
+				if(timer.get() > maxTimeVal)
+				{
+					drivetrain.setLeftWheels(0);
+					drivetrain.setRightWheels(0);
+					return;
+				}
+
 			}
 		}
 		else if(degrees < 0)
@@ -214,17 +380,43 @@ public class Autonomous {
 			{
 				drivetrain.setRightWheels(0);
 				drivetrain.setLeftWheels(motorPower);
+				if(timer.get() > maxTimeVal)
+				{
+					drivetrain.setLeftWheels(0);
+					drivetrain.setRightWheels(0);
+					return;
+				}
+
 			}
 			while(gyro.getAngle() < desiredVal)
 			{
 				drivetrain.setRightWheels(motorPower - correctVal);
 				drivetrain.setLeftWheels(-motorPower + correctVal);
+				if(timer.get() > maxTimeVal)
+				{
+					drivetrain.setLeftWheels(0);
+					drivetrain.setRightWheels(0);
+					return;
+				}
+
 			}
 		}
 		drivetrain.setLeftWheels(0);
 		drivetrain.setRightWheels(0);
 	}
 	
+	public void drive(double seconds, double motorPower)
+	{
+		timer.reset();
+		timer.start();
+		while(timer.get() < seconds)
+		{
+			drivetrain.setLeftWheels(motorPower);
+			drivetrain.setRightWheels(motorPower);
+		}
+		drivetrain.setLeftWheels(0);
+		drivetrain.setRightWheels(0);
+	}
 	/**
 	 * Drives in a straight line, using the gyro to correct if it curves
 	 * @param seconds Time to drive
@@ -278,7 +470,7 @@ public class Autonomous {
 		while(true)
 		{
 			Timer.delay(0.1);
-			processor.lookForTarget();
+			//processor.lookForTarget();
 			if(processor.getHeightDistance() > 170) //higher = closer
 			{
 				drivetrain.setLeftWheels(-0.5);

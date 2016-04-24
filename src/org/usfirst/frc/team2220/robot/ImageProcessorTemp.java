@@ -81,7 +81,7 @@ public class ImageProcessorTemp {
 	double leftDistance, rightDistance, modHeight;
 
 	NIVision.Rect rect;
-	CameraServer server;
+	//CameraServer server;
 	int session;
 
 	/**
@@ -112,7 +112,7 @@ public class ImageProcessorTemp {
 	 * 
 	 * @return if a target was found
 	 */
-	boolean lookForTarget() {
+	boolean lookForTarget(boolean favorLeft) {
 		camera.getImage(frame);
 		
 		//Threshold the image looking for yellow (tote color)
@@ -150,7 +150,26 @@ public class ImageProcessorTemp {
 				particles.add(par);
 			}
 			particles.sort(null);
+			if(favorLeft)
+			{
+				if(particles.get(1).BoundingRectLeft < particles.get(0).BoundingRectLeft)
+				{
+					ParticleReport temp = particles.get(0);
+					particles.set(0, particles.get(1));
+					particles.set(1, temp);
+				}
+			}
+			else
+			{
+				if(particles.get(1).BoundingRectLeft > particles.get(0).BoundingRectLeft)
+				{
+					ParticleReport temp = particles.get(0);
+					particles.set(0, particles.get(1));
+					particles.set(1, temp);
+				}
+			}
 			
+				/*
 			for (int i = 0; i < particles.size(); i++) {
 				int topBound = (int) particles.elementAt(i).BoundingRectTop;
 				int leftBound = (int) particles.elementAt(i).BoundingRectLeft;
@@ -161,7 +180,7 @@ public class ImageProcessorTemp {
 				rect = new NIVision.Rect(topBound, leftBound, height, width);
 				// (int)particles.elementAt(0).BoundingRectLeft
 				if (i == 0) {
-					NIVision.imaqDrawShapeOnImage(frame, frame, rect, DrawMode.DRAW_VALUE, ShapeMode.SHAPE_RECT, 0.0f);
+					NIVision.imaqDrawShapeOnImage(frame, binaryFrame, rect, DrawMode.DRAW_VALUE, ShapeMode.SHAPE_RECT, 0.0f);
 					SmartDashboard.putNumber("frameHeight", height);
 					SmartDashboard.putNumber("frameWidth", width);
 					SmartDashboard.putNumber("frameLeftBound", leftBound);
@@ -174,8 +193,23 @@ public class ImageProcessorTemp {
 					SmartDashboard.putNumber("leftDistance", leftDistance);
 					SmartDashboard.putNumber("rightDistance", rightDistance);
 				} else
-					NIVision.imaqDrawShapeOnImage(frame, frame, rect, DrawMode.DRAW_VALUE, ShapeMode.SHAPE_OVAL, 0.0f);
+					NIVision.imaqDrawShapeOnImage(frame, binaryFrame, rect, DrawMode.DRAW_VALUE, ShapeMode.SHAPE_OVAL, 0.0f);
 			}
+			*/
+				
+				leftDistance = (int) particles.elementAt(0).BoundingRectLeft;
+				rightDistance = 640 - ((int) particles.elementAt(0).BoundingRectRight);
+				SmartDashboard.putNumber("modHeight", modHeight);
+				SmartDashboard.putNumber("leftDistance", leftDistance);
+				SmartDashboard.putNumber("rightDistance", rightDistance);
+				int topBound = (int) particles.elementAt(0).BoundingRectTop;
+				int leftBound = (int) particles.elementAt(0).BoundingRectLeft;
+				int height = (int) particles.elementAt(0).BoundingRectBottom
+						- (int) particles.elementAt(0).BoundingRectTop;
+				int width = (int) particles.elementAt(0).BoundingRectRight
+						- (int) particles.elementAt(0).BoundingRectLeft;
+				rect = new NIVision.Rect(topBound, leftBound, height, width);
+				NIVision.imaqDrawShapeOnImage(binaryFrame, binaryFrame, rect, DrawMode.DRAW_VALUE, ShapeMode.SHAPE_RECT, 1.0f);
 
 			//This example only scores the largest particle. Extending to score all particles and choosing the desired one is left as an exercise
 			//for the reader. Note that this scores and reports information about a single particle (single L shaped target). To get accurate information 
@@ -206,11 +240,11 @@ public class ImageProcessorTemp {
 	 * This tells you whether or not the target is centered
 	 * @return right distance minus left distance
 	 */
-	public double getLeftRightDistance() {
+	public double getLeftRightDistance(boolean isAuto) {
 		double loopTimes = 1;
 		double tempLeft = 0, tempRight = 0;
 		for (int i = 0; i < loopTimes; i++) {
-			if (lookForTarget()) {
+			if (lookForTarget(isAuto)) {
 				tempLeft += leftDistance;
 				tempRight += rightDistance;
 			}
