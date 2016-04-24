@@ -115,10 +115,24 @@ public class Autonomous {
 			else if(leftRightValue > leftRightMid + leftRightRange || leftRightValue < leftRightMid - leftRightRange) //values in pixels
 			{
 				leftRightValue -= leftRightMid;
-				double wheelMoveVal = leftRightValue * 0.003; //previously .0075
+				double wheelMoveVal = leftRightValue * 0.004; //previously .0075
 				
-				double maxVal = 0.8;
-				double minVal = 0.38;
+				SmartDashboard.putNumber("prevTurnVal", wheelMoveVal);
+				double maxVal = 0.6;
+				double minVal = 0.41;
+				boolean negative = false;
+				if(wheelMoveVal < 0)
+				{
+					negative = true;
+					wheelMoveVal *= -1;
+				}
+				if(wheelMoveVal < minVal)
+					wheelMoveVal = minVal;
+				if(wheelMoveVal > maxVal)
+					wheelMoveVal = maxVal;
+				if(negative)
+					wheelMoveVal *= -1;
+				/*
 				if(wheelMoveVal > maxVal)
 					wheelMoveVal = maxVal;
 				else if(wheelMoveVal < -maxVal)
@@ -130,19 +144,27 @@ public class Autonomous {
 					else if(wheelMoveVal > -minVal)
 						wheelMoveVal = -minVal;
 				}
+				*/
 				
 				SmartDashboard.putNumber("turnVal", wheelMoveVal);
 					
 				drivetrain.setLeftWheels(wheelMoveVal);
 				drivetrain.setRightWheels(-wheelMoveVal); //right reversed
-				Timer.delay(0.1);
-				drivetrain.setLeftWheels(0);
-				drivetrain.setRightWheels(0);
+				//Timer.delay(0.05);
+				
 			}
 			else
+			{
+				drivetrain.setLeftWheels(0);
+				drivetrain.setRightWheels(0);
 				return true;
+			}
 			if(tempTime.get() > 0.5)
+			{
+				drivetrain.setLeftWheels(0);
+				drivetrain.setRightWheels(0);
 				break;
+			}
 		}
 		return false;
 	}

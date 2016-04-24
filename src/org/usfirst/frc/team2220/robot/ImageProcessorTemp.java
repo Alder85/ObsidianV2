@@ -159,6 +159,7 @@ public class ImageProcessorTemp {
 					particles.set(1, temp);
 				}
 			}
+			/*
 			else
 			{
 				if(particles.get(1).BoundingRectLeft > particles.get(0).BoundingRectLeft)
@@ -168,6 +169,7 @@ public class ImageProcessorTemp {
 					particles.set(1, temp);
 				}
 			}
+			*/
 			
 				/*
 			for (int i = 0; i < particles.size(); i++) {
